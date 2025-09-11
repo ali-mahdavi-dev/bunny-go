@@ -1,0 +1,53 @@
+package command
+
+import (
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
+
+	config "bunny-go/configs"
+)
+
+var (
+	cfg     config.Config
+	envFile string
+	rootCmd = &cobra.Command{
+		Use: "",
+		Run: func(cmd *cobra.Command, args []string) {
+			initializeConfigs()
+		},
+	}
+)
+
+func initializeConfigs() {
+	err := godotenv.Load(envFile)
+	if err != nil {
+		panic(err)
+	}
+
+	c, err := config.Load()
+	if err != nil {
+		log.Fatalf("could not load configuration %s\n", err.Error())
+	}
+
+	cfg = *c
+}
+
+func init() {
+	cobra.OnInitialize()
+	rootCmd.PersistentFlags().StringVarP(&envFile, "env-file", "e", ".env", ".env file")
+
+	// rootCmd.AddCommand(migrateCmd())
+	// rootCmd.AddCommand(runHTTPServerCMD())
+	// rootCmd.AddCommand(dataMigrationCMD())
+	// rootCmd.AddCommand(videoCompressionCMD())
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+}
