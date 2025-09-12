@@ -36,7 +36,6 @@ func startServer(cfg *config.Config) error {
 		MaxIdleTime:  cfg.Database.MaxIdleTime,
 		MaxIdleConns: cfg.Database.MaxIdleConns,
 		MaxOpenConns: cfg.Database.MaxOpenConns,
-		TablePrefix:  cfg.Database.TablePrefox,
 	})
 	if err != nil {
 		panic(err)

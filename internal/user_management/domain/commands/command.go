@@ -3,7 +3,7 @@ package commands
 // user
 type RegisterUser struct {
 	AvatarIdentifier string `json:"avatar_identifier" binding:"required"`
-	UserName         string `json:"username" binding:"required,min=3"`
+	UserName         string `json:"user_name" binding:"required,min=3"`
 	FirstName        string `json:"first_name" binding:"required,min=3"`
 	LastName         string `json:"last_name" binding:"required,min=3"`
 	Email            string `json:"email" binding:"required,min=3"`

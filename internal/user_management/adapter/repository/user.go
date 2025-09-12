@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/adapter"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain/entity"
 	"gorm.io/gorm"
 )
+
+var ErrUserNotFound = errors.New("user not found")
 
 type UserRepository interface {
 	adapter.BaseRepository[*entity.User]
@@ -33,10 +36,26 @@ func (u *userGormRepository) Model(ctx context.Context) *gorm.DB {
 func (u *userGormRepository) FindByUsernameExcludingID(ctx context.Context, username string, id uint) (*entity.User, error) {
 	var user = new(entity.User)
 	err := u.Model(ctx).Where("user_name = ? and id != ? and deleted_at is null", username, id).First(&user).Error
-	return user, err
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (u *userGormRepository) FindByUserName(ctx context.Context, username string) (*entity.User, error) {
-	return u.FindByField(ctx, "user_name", username)
+	usesr, err := u.FindByField(ctx, "user_name", username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
 
+		return nil, err
+	}
+
+	return usesr, nil
 }

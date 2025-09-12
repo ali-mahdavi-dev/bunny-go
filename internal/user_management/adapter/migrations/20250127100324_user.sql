@@ -3,7 +3,7 @@
 CREATE TABLE users (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     avatar_identifier VARCHAR(255) NOT NULL,
-    username VARCHAR(255) NOT NULL,
+    user_name VARCHAR(255) NOT NULL,
     first_name VARCHAR(255),
     last_name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,

@@ -2,15 +2,15 @@ package databases
 
 import (
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-	"gorm.io/gorm/schema"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Config struct {
@@ -21,7 +21,6 @@ type Config struct {
 	MaxIdleTime  int
 	MaxOpenConns int
 	MaxIdleConns int
-	TablePrefix  string
 }
 
 func New(cfg Config) (*gorm.DB, error) {
@@ -40,11 +39,7 @@ func New(cfg Config) (*gorm.DB, error) {
 	ormCfg := &gorm.Config{
 		SkipDefaultTransaction: true,
 		PrepareStmt:            true,
-		NamingStrategy: schema.NamingStrategy{
-			TablePrefix:   cfg.TablePrefix,
-			SingularTable: true,
-		},
-		Logger: logger.Discard,
+		Logger:                 logger.Discard,
 	}
 
 	if cfg.Debug {

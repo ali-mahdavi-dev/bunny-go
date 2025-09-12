@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"image/png"
 	"net/http"
 
@@ -53,7 +52,7 @@ func (u *UserController) Register(c *gin.Context) {
 
 	err := u.bus.Handle(ctx, cmd)
 	if err != nil {
-		ginx.ResError(c, fmt.Errorf("failed to create user"))
+		ginx.ResError(c, err)
 		return
 	}
 

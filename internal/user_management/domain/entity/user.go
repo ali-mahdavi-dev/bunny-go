@@ -7,7 +7,7 @@ import (
 type User struct {
 	adapter.BaseEntity
 	AvatarIdentifier string `json:"avatar_identifier"`
-	UserName         string `json:"username"`
+	UserName         string `json:"user_name"`
 	FirstName        string `json:"first_name"`
 	LastName         string `json:"last_name"`
 	Email            string `json:"email"`

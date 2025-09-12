@@ -1,6 +1,6 @@
 module github.com/ali-mahdavi-dev/bunny-go
 
-go 1.25.1
+go 1.25.0
 
 require (
 	github.com/IBM/sarama v1.46.0
@@ -9,7 +9,6 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.14.0
 	github.com/spf13/cast v1.10.0
@@ -54,6 +53,7 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
