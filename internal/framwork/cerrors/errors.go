@@ -1,5 +1,3 @@
-// Package errors provides a way to return detailed information
-// for an request error. The error is normally JSON encoded.
 package cerrors
 
 import (
