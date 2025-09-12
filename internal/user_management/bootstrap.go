@@ -4,12 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
-	"bunny-go/internal/framwork/service_layer/messagebus"
-	"bunny-go/internal/framwork/service_layer/unit_of_work"
-	"bunny-go/internal/user_management/adapter"
-	"bunny-go/internal/user_management/entryporint"
-	"bunny-go/internal/user_management/entryporint/controller"
+	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/command_event_handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/messagebus"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/unit_of_work"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/adapter"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/entryporint"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/entryporint/controller"
 )
 
 func Bootstrap(router *gin.Engine, db *gorm.DB) error {

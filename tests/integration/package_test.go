@@ -1,16 +1,17 @@
 package integration
 
 import (
-	"bunny-go/internal/framwork/infrastructure/databases"
-	"bunny-go/internal/framwork/infrastructure/redisx"
-	"bunny-go/internal/framwork/service_layer/cache"
-	"bunny-go/internal/framwork/service_layer/messagebus"
-	"bunny-go/internal/user_management"
-	"bunny-go/tests/mocks"
-	testutil "bunny-go/tests/testutility"
 	"context"
 	"os"
 	"testing"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/infrastructure/databases"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/infrastructure/redisx"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/cache"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/messagebus"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management"
+	"github.com/ali-mahdavi-dev/bunny-go/tests/mocks"
+	testutil "github.com/ali-mahdavi-dev/bunny-go/tests/testutility"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"

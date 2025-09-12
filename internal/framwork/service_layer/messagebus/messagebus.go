@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
-	"bunny-go/internal/framwork/service_layer/unit_of_work"
+	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/command_event_handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/unit_of_work"
 )
 
 // DuplicateCommandHandlerError occurs when a handler with the same name already exists.

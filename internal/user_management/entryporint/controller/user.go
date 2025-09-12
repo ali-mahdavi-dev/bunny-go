@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"bunny-go/internal/framwork/service_layer/messagebus"
-	"bunny-go/internal/user_management/adapter"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/messagebus"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/adapter"
 )
 
 type UserController struct {

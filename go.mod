@@ -1,4 +1,4 @@
-module bunny-go
+module github.com/ali-mahdavi-dev/bunny-go
 
 go 1.25.1
 

@@ -1,11 +1,12 @@
 package mocks
 
 import (
-	"bunny-go/internal/framwork/helpers/is"
-	"bunny-go/internal/framwork/service_layer/types"
 	"context"
 	"errors"
 	"reflect"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/helpers/is"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/types"
 )
 
 var (

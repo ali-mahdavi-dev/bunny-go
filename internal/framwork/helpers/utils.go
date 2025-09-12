@@ -3,7 +3,7 @@ package helpers
 import (
 	"reflect"
 
-	"bunny-go/internal/framwork/helpers/kind"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/helpers/kind"
 )
 
 func ToPtr(val reflect.Value) reflect.Value {

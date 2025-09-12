@@ -7,7 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"bunny-go/internal/framwork/service_layer/types"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/types"
 )
 
 type UnitOfWork interface {

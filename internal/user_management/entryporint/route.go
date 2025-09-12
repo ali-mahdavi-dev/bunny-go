@@ -3,7 +3,7 @@ package entryporint
 import (
 	"github.com/gin-gonic/gin"
 
-	"bunny-go/internal/user_management/entryporint/controller"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/entryporint/controller"
 )
 
 type UserManagementRouter struct {

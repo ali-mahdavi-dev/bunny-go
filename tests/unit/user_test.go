@@ -1,9 +1,10 @@
 package unit
 
 import (
-	cerrors "bunny-go/internal/framwork/errors"
-	"bunny-go/internal/user_management/domain/entities"
 	"testing"
+
+	cerrors "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/errors"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain/entities"
 
 	"github.com/stretchr/testify/assert"
 )

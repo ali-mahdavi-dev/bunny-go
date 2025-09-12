@@ -3,10 +3,11 @@
 package cerrors
 
 import (
-	"bunny-go/internal/framwork/cerrors/phrases"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/cerrors/phrases"
 
 	"github.com/pkg/errors"
 )

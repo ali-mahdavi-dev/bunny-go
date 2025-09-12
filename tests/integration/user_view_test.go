@@ -1,11 +1,12 @@
 package integration
 
 import (
-	"bunny-go/internal/user_management/domain"
-	"bunny-go/internal/user_management/domain/entities"
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain/entities"
 
 	"github.com/stretchr/testify/assert"
 )

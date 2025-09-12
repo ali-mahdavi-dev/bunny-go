@@ -23,14 +23,8 @@ type AvatarGenerator struct {
 }
 
 func NewAvatarGenerator(avatarDataFolder string) (*AvatarGenerator, error) {
-	err := os.MkdirAll(avatarDataFolder, os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-
-	g := &AvatarGenerator{
-		avatarImagesPath: avatarDataFolder,
-	}
+	var err error
+	g := &AvatarGenerator{}
 
 	if g.bodies, err = loadLayerPaths("internal/user_management/assets/images/bodies"); err != nil {
 		return nil, err
@@ -65,7 +59,7 @@ func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	img1, err := decodeImage(layer1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer1), err)

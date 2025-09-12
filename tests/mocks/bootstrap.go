@@ -3,9 +3,9 @@ package mocks
 import (
 	"os/user"
 
-	"bunny-go/internal/framwork/service_layer/messagebus"
-	"bunny-go/internal/user_management"
-	"bunny-go/internal/user_management/domain"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/messagebus"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain"
 
 	"gorm.io/gorm"
 )

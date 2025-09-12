@@ -1,8 +1,9 @@
 package mocks
 
 import (
-	"bunny-go/internal/framwork/adapter"
 	"context"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/adapter"
 
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"

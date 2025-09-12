@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"bunny-go/cmd/command"
+	"github.com/ali-mahdavi-dev/bunny-go/cmd/command"
 )
 
 func init() {

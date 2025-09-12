@@ -1,9 +1,10 @@
 package mocks
 
 import (
-	"bunny-go/internal/user_management/adapter/repositories"
-	"bunny-go/internal/user_management/domain/entities"
 	"errors"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/adapter/repositories"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain/entities"
 
 	"gorm.io/gorm"
 
