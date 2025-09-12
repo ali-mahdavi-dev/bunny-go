@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"bunny-go/pkg/framwork/helpers/is"
-	"bunny-go/pkg/framwork/service_layer/types"
+	"bunny-go/internal/framwork/helpers/is"
+	"bunny-go/internal/framwork/service_layer/types"
 	"context"
 	"errors"
 	"reflect"

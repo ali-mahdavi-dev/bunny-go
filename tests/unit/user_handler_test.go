@@ -1,9 +1,9 @@
 package unit
 
 import (
+	cerrors "bunny-go/internal/framwork/errors"
 	"bunny-go/internal/user_management/domain"
 	"bunny-go/internal/user_management/domain/entities"
-	"bunny-go/pkg/framwork/errors"
 	"bunny-go/tests/mocks"
 	"context"
 	"testing"
@@ -30,7 +30,7 @@ func TestForUserExisting(t *testing.T) {
 
 	result, err := bus.Handle(ctx, command)
 
-	assert.Equal(t, err, errors.BadRequest("User.AlreadyExists"))
+	assert.Equal(t, err, cerrors.BadRequest("User.AlreadyExists"))
 	assert.Nil(t, result)
 }
 

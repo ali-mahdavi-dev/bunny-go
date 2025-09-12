@@ -1,8 +1,8 @@
 package unit
 
 import (
+	cerrors "bunny-go/internal/framwork/errors"
 	"bunny-go/internal/user_management/domain/entities"
-	"bunny-go/pkg/framwork/errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ func TestForNewUser(t *testing.T) {
 
 func TestUserIsUnder18YearsOld(t *testing.T) {
 	// Arrange
-	errorExpected := errors.BadRequest("Transaction.AgeInvalid")
+	errorExpected := cerrors.BadRequest("Transaction.AgeInvalid")
 
 	//Act
 	_, err := UserCreationMethod("", 17)
@@ -36,7 +36,7 @@ func TestUserIsUnder18YearsOld(t *testing.T) {
 }
 
 func TestUserNameIsInvalid(t *testing.T) {
-	errorExpected := errors.BadRequest("Transaction.Invalid")
+	errorExpected := cerrors.BadRequest("Transaction.Invalid")
 
 	_, err := UserCreationMethod("admin", 0)
 

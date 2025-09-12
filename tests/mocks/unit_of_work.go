@@ -1,26 +1,20 @@
 package mocks
 
 import (
-	"bunny-go/internal"
-	"bunny-go/internal/user_management/adapter/repositories"
-	"bunny-go/pkg/framwork/service_layer/types"
 	"context"
 
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
-)
 
-var _ internal.UnitOfWorkImp = &FakeUnitOfWork{}
+	"bunny-go/internal/framwork/service_layer/types"
+	"bunny-go/internal/user_management/adapter/repositories"
+)
 
 type FakeUnitOfWork struct {
 	mock.Mock
 	tx    *gorm.DB
 	user  repositories.UserRepository
 	trade repositories.TradeRepository
-}
-
-func (f *FakeUnitOfWork) Trade() repositories.TradeRepository {
-	return f.trade
 }
 
 func (f *FakeUnitOfWork) Register() {

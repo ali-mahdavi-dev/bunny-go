@@ -4,31 +4,42 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"bunny-go/internal"
+	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
+	"bunny-go/internal/framwork/service_layer/messagebus"
+	"bunny-go/internal/framwork/service_layer/unit_of_work"
+	"bunny-go/internal/user_management/adapter"
 	"bunny-go/internal/user_management/entryporint"
 	"bunny-go/internal/user_management/entryporint/controller"
-	"bunny-go/internal/user_management/service_layer/handler"
-	"bunny-go/pkg/framwork/service_layer/messagebus"
 )
 
-func Bootstrap(router *gin.Engine, db *gorm.DB) messagebus.MessageBus {
-	uow := internal.NewGormUnitOfWorkImp(db)
-	bus := messagebus.NewMessageBus()
+func Bootstrap(router *gin.Engine, db *gorm.DB) error {
+	eventCh := make(chan commandeventhandler.EventHandler, 100)
+	uow := unit_of_work.New(db)
+	bus := messagebus.NewMessageBus(uow, eventCh)
 
 	// init controller
-	userController := controller.NewUserController(bus)
+	// userHandler, err := handler.NewUserCommandHandler("_data-dev/avatar-data")
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create user command handler: %w", err)
+	// }
+	ag, err := adapter.NewAvatarGenerator("_data-dev/avatar-data")
+	if err != nil {
+		return err
+	}
+	userController := controller.NewUserController(bus, ag)
 
+	// init router
+	entryporint.NewUserManagementRouter(router, entryporint.UserManagementRouter{
+		User: userController,
+	})
 
-    entryporint.NewUserManagementRouter(router, entryporint.UserManagementRouter{
-        User: userController,
-    })
-
-    // init handler
-	userHandler := handler.NewUserCommandHandler(uow)
+	// init handler
 	bus.AddHandler(
-		// avatar
-		messagebus.NewCommandHandler(userHandler.CreateUserHandle),
+	// avatar
+	// commandeventhandler.NewCommandHandler(userHandler.CreateUserHandle),
 	)
-
-	return bus
+	// fmt.Println("---------------------------- ----------------------------")
+	// err:=userHandler.GenerateAndSaveAvatar("ali", "ali") // test
+	// fmt.Println("err:", err)
+	return nil
 }
