@@ -36,17 +36,15 @@ func startServer(cfg *config.Config) error {
 		MaxIdleTime:  cfg.Database.MaxIdleTime,
 		MaxIdleConns: cfg.Database.MaxIdleConns,
 		MaxOpenConns: cfg.Database.MaxOpenConns,
-		TablePrefix:  cfg.Database.TablePrefox,
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	server := gin.Default()
-
+	fmt.Println("Database connected", db)
 	// Bootstrap
 	user_management.Bootstrap(server, db)
-
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	err = server.Run(addr)

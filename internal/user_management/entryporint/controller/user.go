@@ -4,10 +4,11 @@ import (
 	"image/png"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/messagebus"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/adapter"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain/commands"
+	"github.com/ali-mahdavi-dev/bunny-go/pkg/ginx"
+	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
@@ -41,20 +42,19 @@ func (s *UserController) GenerateAvatarHandler(c *gin.Context) {
 	}
 }
 
-// func (u *UserController) CreateUserController(c *gin.Context) {
-// 	ctx := c.Request.Context()
-// 	cmd := new(domain.GenerateAvatarCommand)
-// 	if err := ginx.ParseJSON(c, cmd); err != nil {
-// 		ginx.ResError(c, err)
-// 		return
-// 	}
+func (u *UserController) Register(c *gin.Context) {
+	ctx := c.Request.Context()
+	cmd := new(commands.RegisterUser)
+	if err := ginx.ParseJSON(c, cmd); err != nil {
+		ginx.ResError(c, err)
+		return
+	}
 
-// 	err := u.bus.Handle(ctx, cmd)
-// 	if err != nil {
-// 		fmt.Println("Error handling command:", err)
-// 		ginx.ResError(c, fmt.Errorf("failed to create user"))
-// 		return
-// 	}
+	err := u.bus.Handle(ctx, cmd)
+	if err != nil {
+		ginx.ResError(c, err)
+		return
+	}
 
-// 	ginx.ResOK(c)
-// }
+	ginx.ResOK(c)
+}

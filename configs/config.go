@@ -32,7 +32,6 @@ type Database struct {
 	MaxIdleTime  int    `envconfig:"DATABASE_MAX_IDLETIME"`
 	MaxIdleConns int    `envconfig:"DATABASE_MAX_IDLECONNS"`
 	MaxOpenConns int    `envconfig:"DATABASE_MAX_OPENCONNS"`
-	TablePrefox  string `envconfig:"DATABASE_TABLE_PREFIX"`
 }
 
 func Load() (*Config, error) {

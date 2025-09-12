@@ -22,7 +22,7 @@ type AvatarGenerator struct {
 	hats             []string
 }
 
-func NewAvatarGenerator(avatarDataFolder string) (*AvatarGenerator, error) {
+func NewAvatarGenerator() (*AvatarGenerator, error) {
 	var err error
 	g := &AvatarGenerator{}
 
