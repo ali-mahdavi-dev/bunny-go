@@ -40,6 +40,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&envFile, "env-file", "e", ".env", ".env file")
 
 	rootCmd.AddCommand(runHTTPServerCMD())
+	rootCmd.AddCommand(migrateCmd())
 }
 
 func Execute() {

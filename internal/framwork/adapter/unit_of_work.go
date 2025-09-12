@@ -19,7 +19,6 @@ type UnitOfWork interface {
 
 type BaseUnitOfWork struct {
 	DB *gorm.DB
-	tx *gorm.DB
 }
 
 func NewBaseUnitOfWork(db *gorm.DB) UnitOfWork {
@@ -29,13 +28,13 @@ func NewBaseUnitOfWork(db *gorm.DB) UnitOfWork {
 }
 
 func (uow *BaseUnitOfWork) GetSession() *gorm.DB {
-	return uow.tx
+	return uow.DB
 }
 
 func (uow *BaseUnitOfWork) Begin() error {
-	uow.tx = uow.DB.Begin()
-	if uow.tx.Error != nil {
-		return uow.tx.Error
+	uow.DB = uow.DB.Begin()
+	if uow.DB.Error != nil {
+		return uow.DB.Error
 	}
 
 	return nil
@@ -62,9 +61,9 @@ func (uow *BaseUnitOfWork) Do(ctx context.Context, fc types.UowUseCase) error {
 }
 
 func (uow *BaseUnitOfWork) Commit() error {
-	return uow.tx.Commit().Error
+	return uow.DB.Commit().Error
 }
 
 func (uow *BaseUnitOfWork) Rollback() error {
-	return uow.tx.Rollback().Error
+	return uow.DB.Rollback().Error
 }
