@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 
-	config "bunny-go/configs"
-	"bunny-go/internal/framwork/infrastructure/databases"
-	"bunny-go/internal/user_management"
+	config "github.com/ali-mahdavi-dev/bunny-go/configs"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/infrastructure/databases"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management"
 )
 
 func runHTTPServerCMD() *cobra.Command {
@@ -46,6 +46,7 @@ func startServer(cfg *config.Config) error {
 
 	// Bootstrap
 	user_management.Bootstrap(server, db)
+
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	err = server.Run(addr)

@@ -5,7 +5,8 @@ import (
 
 	"gorm.io/gorm"
 
-	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
+	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/command_event_handler"
+
 )
 
 type Entity interface {

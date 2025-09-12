@@ -4,13 +4,12 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"image"
-	"image/png"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"sort"
-	"time"
 
 	"github.com/disintegration/imaging"
 )
@@ -24,14 +23,8 @@ type AvatarGenerator struct {
 }
 
 func NewAvatarGenerator(avatarDataFolder string) (*AvatarGenerator, error) {
-	err := os.MkdirAll(avatarDataFolder, os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-
-	g := &AvatarGenerator{
-		avatarImagesPath: avatarDataFolder,
-	}
+	var err error
+	g := &AvatarGenerator{}
 
 	if g.bodies, err = loadLayerPaths("internal/user_management/assets/images/bodies"); err != nil {
 		return nil, err
@@ -47,21 +40,6 @@ func NewAvatarGenerator(avatarDataFolder string) (*AvatarGenerator, error) {
 	}
 
 	return g, nil
-}
-
-func (g *AvatarGenerator) GenerateAndSave(identifier, filename string) error {
-	avatar, err := g.Generate(identifier)
-	if err != nil {
-		return err
-	}
-	outPath := filepath.Join(g.avatarImagesPath, filename+".png")
-	outFile, err := os.Create(outPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	return png.Encode(outFile, avatar)
 }
 
 func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
@@ -81,9 +59,19 @@ func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	img1, _ := decodeImage(layer1)
-	img2, _ := decodeImage(layer2)
-	img3, _ := decodeImage(layer3)
+
+	img1, err := decodeImage(layer1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer1), err)
+	}
+	img2, err := decodeImage(layer2)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer2), err)
+	}
+	img3, err := decodeImage(layer3)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer3), err)
+	}
 
 	avatar := imaging.Overlay(img0, img1, image.Point{0, 0}, 1.0)
 	avatar = imaging.Overlay(avatar, img2, image.Point{0, 0}, 1.0)
@@ -115,8 +103,8 @@ func seedFromHash(identifier string) int64 {
 	h := md5.Sum([]byte(identifier))
 	hexStr := hex.EncodeToString(h[:])
 	var seed int64
-	for i := 0; i < 16; i++ {
+	for i := 0; i < len(hexStr); i++ {
 		seed = seed*16 + int64(hexStr[i])
 	}
-	return seed + time.Now().UnixNano()%999999
+	return seed
 }

@@ -1,9 +1,9 @@
 package entities
 
 import (
-	"bunny-go/internal/framwork/adapter"
-	cerrors "bunny-go/internal/framwork/cerrors"
-	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/adapter"
+	cerrors "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/cerrors"
+	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/command_event_handler"
 )
 
 type User struct {

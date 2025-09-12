@@ -5,8 +5,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"bunny-go/internal/framwork/adapter"
-	"bunny-go/internal/user_management/domain/entities"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/adapter"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/domain/entities"
 )
 
 type UserRepository interface {

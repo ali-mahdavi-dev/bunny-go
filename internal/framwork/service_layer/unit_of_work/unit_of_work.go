@@ -6,10 +6,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"bunny-go/internal/framwork/adapter"
-	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
-	"bunny-go/internal/framwork/service_layer/types"
-	"bunny-go/internal/user_management/adapter/repository"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/adapter"
+	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/command_event_handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/service_layer/types"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management/adapter/repository"
 )
 
 type PGUnitOfWork interface {

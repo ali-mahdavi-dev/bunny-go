@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
-	config "bunny-go/configs"
+	config "github.com/ali-mahdavi-dev/bunny-go/configs"
 )
 
 var (
