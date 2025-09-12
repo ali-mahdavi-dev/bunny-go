@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"bunny-go/pkg/framwork/adapter"
+	"bunny-go/internal/framwork/adapter"
 	"context"
 
 	"github.com/stretchr/testify/mock"

@@ -1,6 +1,6 @@
 package ginx
 
-import "bunny-go/pkg/framwork/errors"
+import "bunny-go/internal/framwork/cerrors"
 
 type Direction string
 
@@ -11,12 +11,12 @@ const (
 )
 
 type ResponseResult struct {
-	Success bool          `json:"success"`
-	Data    interface{}   `json:"data,omitempty"`
-	Total   int64         `json:"total,omitempty"`
-	Page    int64         `json:"page,omitempty"`
-	Pages   int64         `json:"pages,omitempty"`
-	Error   *errors.Error `json:"error,omitempty"`
+	Success bool         `json:"success"`
+	Data    interface{}  `json:"data,omitempty"`
+	Total   int64        `json:"total,omitempty"`
+	Page    int64        `json:"page,omitempty"`
+	Pages   int64        `json:"pages,omitempty"`
+	Error   cerrors.Error `json:"error,omitempty"`
 }
 
 type PaginationResult struct {

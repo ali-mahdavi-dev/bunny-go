@@ -1,6 +1,6 @@
 package entities
 
-import "bunny-go/pkg/framwork/adapter"
+import "bunny-go/internal/framwork/adapter"
 
 type Trade struct {
 	adapter.BaseEntity

@@ -39,10 +39,7 @@ func init() {
 	cobra.OnInitialize()
 	rootCmd.PersistentFlags().StringVarP(&envFile, "env-file", "e", ".env", ".env file")
 
-	// rootCmd.AddCommand(migrateCmd())
-	// rootCmd.AddCommand(runHTTPServerCMD())
-	// rootCmd.AddCommand(dataMigrationCMD())
-	// rootCmd.AddCommand(videoCompressionCMD())
+	rootCmd.AddCommand(runHTTPServerCMD())
 }
 
 func Execute() {

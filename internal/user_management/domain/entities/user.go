@@ -1,8 +1,9 @@
 package entities
 
 import (
-	"bunny-go/pkg/framwork/adapter"
-	"bunny-go/pkg/framwork/errors"
+	"bunny-go/internal/framwork/adapter"
+	cerrors "bunny-go/internal/framwork/cerrors"
+	commandeventhandler "bunny-go/internal/framwork/service_layer/command_event_handler"
 )
 
 type User struct {
@@ -11,14 +12,15 @@ type User struct {
 	UserName string
 	Amount   int
 	Trades   []Trade
+	Events   []commandeventhandler.EventHandler `gorm:"-"`
 }
 
 func NewUser(userName string, age int, amount int) (*User, error) {
 	if userName == "admin" {
-		return nil, errors.BadRequest("Transaction.Invalid")
+		return nil, cerrors.BadRequest("Transaction.Invalid")
 	}
 	if age < 18 {
-		return nil, errors.BadRequest("Transaction.AgeInvalid")
+		return nil, cerrors.BadRequest("Transaction.AgeInvalid")
 	}
 	user := &User{}
 	user.UserName = userName
@@ -29,14 +31,18 @@ func NewUser(userName string, age int, amount int) (*User, error) {
 
 func (u *User) Update(userName string, age int, amount int) error {
 	if userName == "admin" {
-		return errors.BadRequest("Transaction.Invalid")
+		return cerrors.BadRequest("Transaction.Invalid")
 	}
 	if age < 18 {
-		return errors.BadRequest("Transaction.AgeInvalid")
+		return cerrors.BadRequest("Transaction.AgeInvalid")
 	}
 
 	u.UserName = userName
 	u.Age = age
 	u.Amount = amount
 	return nil
+}
+
+func (u *User) Event() []commandeventhandler.EventHandler {
+	return u.Events
 }

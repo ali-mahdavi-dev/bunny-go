@@ -11,8 +11,8 @@ type UserManagementRouter struct {
 }
 
 func NewUserManagementRouter(router *gin.Engine, controller UserManagementRouter) {
-	userRoute := router.Group("/v1/user")
+	versionRoute := router.Group("/api/v1")
 	{
-		userRoute.POST("", controller.User.CreateUserController)
+		versionRoute.POST("/avatar/:id", controller.User.GenerateAvatarHandler)
 	}
 }

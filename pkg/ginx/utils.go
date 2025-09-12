@@ -1,7 +1,7 @@
 package ginx
 
 import (
-	"bunny-go/pkg/framwork/errors"
+	"bunny-go/internal/framwork/cerrors"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/spf13/cast"
 )
 
 // Get access token from header or query parameter
@@ -34,7 +35,7 @@ func GetToken(c *gin.Context) string {
 // Parse body json data to struct
 func ParseJSON(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindJSON(obj); err != nil {
-		return errors.BadRequest("FailedParseJson", err.Error())
+		return cerrors.BadRequest("FailedParseJson", err.Error())
 	}
 	return nil
 }
@@ -42,7 +43,7 @@ func ParseJSON(c *gin.Context, obj interface{}) error {
 // Parse query parameter to struct
 func ParseQuery(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindQuery(obj); err != nil {
-		return errors.BadRequest("FailedParseQuery", err.Error())
+		return cerrors.BadRequest("FailedParseQuery", err.Error())
 	}
 	return nil
 }
@@ -50,7 +51,7 @@ func ParseQuery(c *gin.Context, obj interface{}) error {
 // Parse Pagination query parameter to struct
 func ParsePaginationQueryParam(c *gin.Context, obj *PaginationResult) error {
 	if err := c.ShouldBindQuery(obj); err != nil {
-		return errors.BadRequest("FailedParseQuery", err.Error())
+		return cerrors.BadRequest("FailedParseQuery", err.Error())
 	}
 
 	if obj.Limit < 1 {
@@ -62,7 +63,7 @@ func ParsePaginationQueryParam(c *gin.Context, obj *PaginationResult) error {
 // Parse body form data to struct
 func ParseForm(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindWith(obj, binding.Form); err != nil {
-		return errors.BadRequest("FailedParseForm", err.Error())
+		return cerrors.BadRequest("FailedParseForm", err.Error())
 	}
 	return nil
 }
@@ -127,22 +128,17 @@ func ResPage(c *gin.Context, v interface{}, pr *PaginationResult) {
 }
 
 func ResError(c *gin.Context, err error, status ...int) {
-	var ierr *errors.Error
-	if e, ok := errors.As(err); ok {
+	var ierr cerrors.Error
+	if e, ok := err.(cerrors.Error); ok {
 		ierr = e
 	} else {
-		ierr = errors.FromError(errors.InternalServerError("", err.Error()))
+		ierr = cerrors.InternalServerError(cast.ToString(err))
 	}
 
-	code := int(ierr.Code)
+	code := int(ierr.Code())
 	if len(status) > 0 {
 		code = status[0]
 	}
 
-	if code >= 500 {
-		ierr.Detail = http.StatusText(http.StatusInternalServerError)
-	}
-
-	ierr.Code = int32(code)
-	ResJSON(c, code, ResponseResult{Error: ierr})
+	ResJSON(c, code, ResponseResult{Error: cerrors.New(ierr.ID(), int32(code), ierr.Message(), ierr.Detail(), ierr.Status())})
 }

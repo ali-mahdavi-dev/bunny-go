@@ -1,11 +1,11 @@
 package integration
 
 import (
+	"bunny-go/internal/framwork/infrastructure/databases"
+	"bunny-go/internal/framwork/infrastructure/redisx"
+	"bunny-go/internal/framwork/service_layer/cache"
+	"bunny-go/internal/framwork/service_layer/messagebus"
 	"bunny-go/internal/user_management"
-	"bunny-go/pkg/framwork/infrastructure/databases"
-	"bunny-go/pkg/framwork/infrastructure/redisx"
-	"bunny-go/pkg/framwork/service_layer/cache"
-	"bunny-go/pkg/framwork/service_layer/messagebus"
 	"bunny-go/tests/mocks"
 	testutil "bunny-go/tests/testutility"
 	"context"
