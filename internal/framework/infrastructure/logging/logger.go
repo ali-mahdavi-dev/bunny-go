@@ -1,5 +1,7 @@
 package logging
 
+import "github.com/ali-mahdavi-dev/bunny-go/config"
+
 type Logger interface {
 	Init()
 
@@ -17,4 +19,11 @@ type Logger interface {
 
 	Fatal(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{})
 	Fatalf(template string, args ...interface{})
+}
+
+func NewLogger(cfg *config.Config) Logger {
+	if cfg.Logger.Logger == "zerolog" {
+		return newZeroLogger(cfg)
+	}
+	panic("logger not supported")
 }

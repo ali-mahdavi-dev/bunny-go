@@ -9,7 +9,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	config "github.com/ali-mahdavi-dev/bunny-go/configs"
+	config "github.com/ali-mahdavi-dev/bunny-go/config"
 	"github.com/ali-mahdavi-dev/bunny-go/docs"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/databases"
