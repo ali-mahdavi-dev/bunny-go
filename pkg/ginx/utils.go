@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/cerrors"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"

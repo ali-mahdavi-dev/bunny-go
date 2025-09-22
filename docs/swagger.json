@@ -1,0 +1,22 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API documentation for KYC levels\nتوضیح: فلو اندپوینت های احراز هویت سمت کاربر",
+        "title": "bunny-go API Documentation.",
+        "contact": {},
+        "version": "1.0.0"
+    },
+    "paths": {},
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

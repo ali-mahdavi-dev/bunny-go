@@ -1,6 +1,6 @@
 package ginx
 
-import "github.com/ali-mahdavi-dev/bunny-go/internal/framwork/cerrors"
+import "github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
 
 type Direction string
 

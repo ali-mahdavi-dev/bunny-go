@@ -6,10 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	config "github.com/ali-mahdavi-dev/bunny-go/configs"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framwork/infrastructure/databases"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/user_management"
+	"github.com/ali-mahdavi-dev/bunny-go/docs"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/databases"
 )
 
 func runHTTPServerCMD() *cobra.Command {
@@ -42,9 +45,10 @@ func startServer(cfg *config.Config) error {
 	}
 
 	server := gin.Default()
-	fmt.Println("Database connected", db)
+	registerSwagger(server, cfg)
+
 	// Bootstrap
-	user_management.Bootstrap(server, db)
+	account.Bootstrap(server, db)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	err = server.Run(addr)
@@ -53,4 +57,15 @@ func startServer(cfg *config.Config) error {
 	}
 
 	return nil
+}
+
+func registerSwagger(r *gin.Engine, cfg *config.Config) {
+	docs.SwaggerInfo.Title = "golang web api"
+	docs.SwaggerInfo.Description = "golang web api"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.BasePath = "/api"
+	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.Host)
+	docs.SwaggerInfo.Schemes = []string{"http"}
+
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
