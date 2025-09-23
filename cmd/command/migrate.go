@@ -2,10 +2,10 @@ package command
 
 import (
 	"fmt"
+	"net/url"
 
 	"errors"
 	"log"
-	"net/url"
 
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/migrations"
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
@@ -16,9 +16,14 @@ import (
 var ErrMigrationFileNameRequired = errors.New("migration name is required")
 
 func dbmateDB() *dbmate.DB {
-	log.Println("DB DNS:", cfg.Database.Dns)
+	cnn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=Asia/Tehran",
+		cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.Host, cfg.Postgres.Port,
+		cfg.Postgres.DbName, cfg.Postgres.SSLMode)
+	u, err := url.Parse(cnn)
+	if err != nil {
+		panic(fmt.Errorf("invalid DB connection string: %w", err))
+	}
 
-	u, _ := url.Parse(cfg.Database.Dns)
 	dbConn := dbmate.New(u)
 	dbConn.FS = migrations.Migrations
 	dbConn.MigrationsDir = []string{"./"}

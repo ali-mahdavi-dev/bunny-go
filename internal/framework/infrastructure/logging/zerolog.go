@@ -56,7 +56,7 @@ func (l *zeroLogger) Init() {
 		var logger = zerolog.New(file).
 			With().
 			Timestamp().
-			Str("AppName", l.cfg.ServiceName).
+			Str("AppName", l.cfg.Server.Name).
 			Str("LoggerName", "Zerolog").
 			Logger()
 		zerolog.SetGlobalLevel(l.getLogLevel())

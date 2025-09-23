@@ -128,7 +128,7 @@ func ResPage(c *gin.Context, v interface{}, pr *PaginationResult) {
 	})
 }
 
-func ResError(c *gin.Context, err error, status ...int) {
+func ResError(c *gin.Context, err error) {
 	var ierr cerrors.Error
 	if e, ok := err.(cerrors.Error); ok {
 		ierr = e
@@ -137,9 +137,6 @@ func ResError(c *gin.Context, err error, status ...int) {
 	}
 
 	code := int(ierr.Code())
-	if len(status) > 0 {
-		code = status[0]
-	}
 
-	ResJSON(c, code, ResponseResult{Error: cerrors.New(ierr.ID(), int32(code), ierr.Message(), ierr.Detail(), ierr.Status())})
+	ResJSON(c, code, ResponseResult{Error: ierr})
 }

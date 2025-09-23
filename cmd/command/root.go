@@ -27,12 +27,7 @@ func initializeConfigs() {
 		panic(err)
 	}
 
-	c, err := config.Load()
-	if err != nil {
-		log.Fatalf("could not load configuration %s\n", err.Error())
-	}
-
-	cfg = *c
+	cfg = *config.GetConfig()
 }
 
 func init() {

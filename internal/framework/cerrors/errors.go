@@ -72,15 +72,15 @@ func New(id string, code int32, message, detail, status string) Error {
 }
 
 // BadRequest generates a 400 error.
-func BadRequest(code string, a ...interface{}) Error {
+func BadRequest(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultBadRequestID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 
 	return &BadRequestErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusBadRequest,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusBadRequest),
@@ -88,14 +88,14 @@ func BadRequest(code string, a ...interface{}) Error {
 }
 
 // Unauthorized generates a 401 error.
-func Unauthorized(code string, a ...interface{}) Error {
+func Unauthorized(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultUnauthorizedID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &UnauthorizedErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusUnauthorized,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusUnauthorized),
@@ -103,14 +103,14 @@ func Unauthorized(code string, a ...interface{}) Error {
 }
 
 // Forbidden generates a 403 error.
-func Forbidden(code string, a ...interface{}) Error {
+func Forbidden(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultForbiddenID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &ForbiddenErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusForbidden,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusForbidden),
@@ -118,14 +118,14 @@ func Forbidden(code string, a ...interface{}) Error {
 }
 
 // NotFound generates a 404 error.
-func NotFound(code string, a ...interface{}) Error {
+func NotFound(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultNotFoundID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &NotFoundErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusNotFound,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusNotFound),
@@ -133,14 +133,14 @@ func NotFound(code string, a ...interface{}) Error {
 }
 
 // MethodNotAllowed generates a 405 error.
-func MethodNotAllowed(code string, a ...interface{}) Error {
+func MethodNotAllowed(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultMethodNotAllowedID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &MethodNotAllowedErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusMethodNotAllowed,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusMethodNotAllowed),
@@ -148,14 +148,14 @@ func MethodNotAllowed(code string, a ...interface{}) Error {
 }
 
 // TooManyRequests generates a 429 error.
-func TooManyRequests(code string, a ...interface{}) Error {
+func TooManyRequests(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultTooManyRequestsID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &TooManyRequestsErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusTooManyRequests,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusTooManyRequests),
@@ -163,14 +163,14 @@ func TooManyRequests(code string, a ...interface{}) Error {
 }
 
 // Timeout generates a 408 error.
-func Timeout(code string, a ...interface{}) Error {
+func Timeout(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultRequestTimeoutID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &TimeoutErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusRequestTimeout,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusRequestTimeout),
@@ -183,7 +183,7 @@ func Conflict(code, format string, a ...interface{}) Error {
 		code = DefaultConflictID
 	}
 	return &ConflictErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusConflict,
 		MessageField: fmt.Sprintf(format, a...),
 		StatusField:  http.StatusText(http.StatusConflict),
@@ -191,14 +191,14 @@ func Conflict(code, format string, a ...interface{}) Error {
 }
 
 // RequestEntityTooLarge generates a 413 error.
-func RequestEntityTooLarge(code string, a ...interface{}) Error {
+func RequestEntityTooLarge(code phrases.MessagePhrase, a ...interface{}) Error {
 	var message string
 	if code == "" {
 		code = DefaultRequestEntityTooLargeID
 	}
-	message = phrases.GetMessage(phrases.MessagePhrase(code), "")
+	message = phrases.GetMessage(code, "")
 	return &RequestEntityTooLargeErr{
-		IDField:      code,
+		IDField:      string(code),
 		CodeField:    http.StatusRequestEntityTooLarge,
 		MessageField: fmt.Sprintf(message, a...),
 		StatusField:  http.StatusText(http.StatusRequestEntityTooLarge),

@@ -1,14 +1,26 @@
-# Build stage
-FROM golang:1.21-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/main.go
+FROM golang:1.25-bookworm AS builder
 
-# Run stage
-FROM alpine:latest
 WORKDIR /app
-COPY --from=builder /app/main .
-EXPOSE 8080
-CMD ["./main"]
+
+COPY go.* ./
+ENV CGO_ENABLED=0
+RUN go env -w GOPROXY=https://goproxy.cn,direct
+RUN go mod download
+
+COPY . ./
+
+RUN go build -v -o server ./cmd/main.go
+
+FROM debian:bookworm-slim 
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/server /app/server
+COPY --from=builder /app/config/config-docker.yml /app/config/config-docker.yml
+COPY --from=builder /app/docs /app/docs
+
+ENV APP_ENV=docker
+ENV PORT=${Port}
+
+CMD [ "/app/server", "http" ]

@@ -1,18 +1,5 @@
 package phrases
 
-type MessagePhrase string
-
-var (
-	UserNotFound      MessagePhrase = "User.NotFound"
-	UserAlreadyExists MessagePhrase = "User.AlreadyExists"
-	UserAgeInvalid    MessagePhrase = "User.AgeInvalid"
-	UserInvalid       MessagePhrase = "User.Invalid"
-	OperationCanNot   MessagePhrase = "Operation.CanNot"
-	FailedParseJson   MessagePhrase = "FailedParseJson"
-	FailedParseQuery  MessagePhrase = "FailedParseQuery"
-	FailedParseForm   MessagePhrase = "FailedParseForm"
-)
-
 type Language string
 
 const (
