@@ -1,6 +1,5 @@
 package phrases
 
-
 type MessagePhrase string
 
 var (

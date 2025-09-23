@@ -8,18 +8,18 @@ server:
   WriteTimeout: 10s
   ReadTimeout: 10s
 logger:
-  filePath: ../logs/
+  filePath: ./logs/
   encoding: json
   level: debug
-  logger: zap
+  logger: zerolog
 cors:
   allowOrigins: "*"
 postgres:
   host: localhost
   port: 5432
   user: ali
-  password: 
-  dbName: car_sale_db
+  password: ""
+  dbName: "bunny_go"
   sslMode: disable
   maxIdleConns: 15
   maxOpenConns: 100

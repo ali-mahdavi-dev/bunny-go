@@ -7,12 +7,12 @@ import (
 
 type User struct {
 	adapter.BaseEntity
-	AvatarIdentifier string `json:"avatar_identifier"`
-	UserName         string `json:"user_name"`
-	FirstName        string `json:"first_name"`
-	LastName         string `json:"last_name"`
-	Email            string `json:"email"`
-	Password         string `json:"password"`
+	AvatarIdentifier string `json:"avatar_identifier" gorm:"avatar_identifier"`
+	UserName         string `json:"user_name" gorm:"user_name"`
+	FirstName        string `json:"first_name" gorm:"first_name"`
+	LastName         string `json:"last_name" gorm:"last_name"`
+	Email            string `json:"email" gorm:"email"`
+	Password         string `json:"password" gorm:"password"`
 }
 
 func NewUser(

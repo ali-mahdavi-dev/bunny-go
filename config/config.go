@@ -18,7 +18,6 @@ type Config struct {
 	Logger   LoggerConfig
 	Otp      OtpConfig
 	JWT      JWTConfig
-
 }
 
 type ServerConfig struct {

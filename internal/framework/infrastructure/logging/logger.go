@@ -27,3 +27,4 @@ func NewLogger(cfg *config.Config) Logger {
 	}
 	panic("logger not supported")
 }
+

@@ -5,7 +5,7 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "API documentation for KYC levels\nتوضیح: فلو اندپوینت های احراز هویت سمت کاربر",
+        "description": "API documentation for Bunny-go levels\nتوضیح: فلو اندپوینت های احراز هویت سمت کاربر",
         "title": "bunny-go API Documentation.",
         "contact": {},
         "version": "1.0.0"

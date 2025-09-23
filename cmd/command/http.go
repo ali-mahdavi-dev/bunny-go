@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -13,6 +14,7 @@ import (
 	"github.com/ali-mahdavi-dev/bunny-go/docs"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/databases"
+	"github.com/ali-mahdavi-dev/bunny-go/pkg/middleware"
 )
 
 func runHTTPServerCMD() *cobra.Command {
@@ -37,10 +39,17 @@ func startServer(cfg *config.Config) error {
 	}
 
 	server := gin.Default()
+	// middleware
+	server.Use(middleware.DefaultStructuredLogger(cfg))
+
+	// swagger
 	registerSwagger(server, cfg)
 
+	// metrics
+	server.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	// Bootstrap
-	account.Bootstrap(server, db)
+	account.Bootstrap(server, db, cfg)
 
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Domain, cfg.Server.InternalPort)
 	err = server.Run(addr)

@@ -1,7 +1,7 @@
 info:
   contact: {}
   description: |-
-    API documentation for KYC levels
+    API documentation for Bunny-go levels
     توضیح: فلو اندپوینت های احراز هویت سمت کاربر
   title: bunny-go API Documentation.
   version: 1.0.0

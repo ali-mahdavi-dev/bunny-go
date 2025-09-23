@@ -12,7 +12,7 @@ func init() {
 
 // @title						bunny-go API Documentation.
 // @version					1.0.0
-// @description				API documentation for KYC levels
+// @description				API documentation for Bunny-go levels
 //
 // @description				توضیح: فلو اندپوینت های احراز هویت سمت کاربر
 // @schemes					http https

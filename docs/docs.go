@@ -32,7 +32,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "",
 	Schemes:          []string{"http", "https"},
 	Title:            "bunny-go API Documentation.",
-	Description:      "API documentation for KYC levels\nتوضیح: فلو اندپوینت های احراز هویت سمت کاربر",
+	Description:      "API documentation for Bunny-go levels\nتوضیح: فلو اندپوینت های احراز هویت سمت کاربر",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

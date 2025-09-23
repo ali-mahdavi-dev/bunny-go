@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
 	config "github.com/ali-mahdavi-dev/bunny-go/config"
@@ -22,11 +21,6 @@ var (
 )
 
 func initializeConfigs() {
-	err := godotenv.Load(envFile)
-	if err != nil {
-		panic(err)
-	}
-
 	cfg = *config.GetConfig()
 }
 

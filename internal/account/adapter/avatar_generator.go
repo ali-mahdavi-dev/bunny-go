@@ -1,13 +1,15 @@
 package adapter
 
 import (
+	"bytes"
 	"crypto/md5"
+	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"image"
+	"io/fs"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"sort"
 
@@ -15,27 +17,27 @@ import (
 )
 
 type AvatarGenerator struct {
-	avatarImagesPath string
-	bodies           []string
-	accessories      []string
-	glasses          []string
-	hats             []string
+	bodies      []string
+	accessories []string
+	glasses     []string
+	hats        []string
+	imagesFS    embed.FS
 }
 
-func NewAvatarGenerator() (*AvatarGenerator, error) {
+func NewAvatarGenerator(imagesFS embed.FS) (*AvatarGenerator, error) {
 	var err error
-	g := &AvatarGenerator{}
+	g := &AvatarGenerator{imagesFS: imagesFS}
 
-	if g.bodies, err = loadLayerPaths("internal/user_management/assets/images/bodies"); err != nil {
+	if g.bodies, err = loadLayerPaths(imagesFS, "assets/images/bodies/*"); err != nil {
 		return nil, err
 	}
-	if g.accessories, err = loadLayerPaths("internal/user_management/assets/images/accessories"); err != nil {
+	if g.accessories, err = loadLayerPaths(imagesFS, "assets/images/accessories/*"); err != nil {
 		return nil, err
 	}
-	if g.glasses, err = loadLayerPaths("internal/user_management/assets/images/glasses"); err != nil {
+	if g.glasses, err = loadLayerPaths(imagesFS, "assets/images/glasses/*"); err != nil {
 		return nil, err
 	}
-	if g.hats, err = loadLayerPaths("internal/user_management/assets/images/hats"); err != nil {
+	if g.hats, err = loadLayerPaths(imagesFS, "assets/images/hats/*"); err != nil {
 		return nil, err
 	}
 
@@ -55,20 +57,20 @@ func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
 	layer2 := g.glasses[r.Intn(len(g.glasses))]
 	layer3 := g.hats[r.Intn(len(g.hats))]
 
-	img0, err := decodeImage(layer0)
+	img0, err := decodeImage(g.imagesFS, layer0)
 	if err != nil {
 		return nil, err
 	}
 
-	img1, err := decodeImage(layer1)
+	img1, err := decodeImage(g.imagesFS, layer1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer1), err)
 	}
-	img2, err := decodeImage(layer2)
+	img2, err := decodeImage(g.imagesFS, layer2)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer2), err)
 	}
-	img3, err := decodeImage(layer3)
+	img3, err := decodeImage(g.imagesFS, layer3)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer3), err)
 	}
@@ -80,8 +82,8 @@ func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
 	return avatar, nil
 }
 
-func loadLayerPaths(folder string) ([]string, error) {
-	files, err := filepath.Glob(filepath.Join(folder, "*"))
+func loadLayerPaths(folder embed.FS, path string) ([]string, error) {
+	files, err := fs.Glob(folder, path)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +91,12 @@ func loadLayerPaths(folder string) ([]string, error) {
 	return files, nil
 }
 
-func decodeImage(path string) (image.Image, error) {
-	file, err := os.Open(path)
+func decodeImage(folder embed.FS, path string) (image.Image, error) {
+	file, err := fs.ReadFile(folder, path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-	img, _, err := image.Decode(file)
+	img, _, err := image.Decode(bytes.NewReader(file))
 	return img, err
 }
 

@@ -33,6 +33,8 @@ const (
 	HashPassword        SubCategory = "HashPassword"
 	DefaultRoleNotFound SubCategory = "DefaultRoleNotFound"
 	FailedToCreateUser  SubCategory = "FailedToCreateUser"
+	Event               SubCategory = "Event"
+	HandleEvent         SubCategory = "HandleEvent"
 
 	// Validation
 	MobileValidation   SubCategory = "MobileValidation"
@@ -43,16 +45,19 @@ const (
 )
 
 const (
-	AppName      ExtraKey = "AppName"
-	LoggerName   ExtraKey = "Logger"
-	ClientIp     ExtraKey = "ClientIp"
-	HostIp       ExtraKey = "HostIp"
-	Method       ExtraKey = "Method"
-	StatusCode   ExtraKey = "StatusCode"
-	BodySize     ExtraKey = "BodySize"
-	Path         ExtraKey = "Path"
-	Latency      ExtraKey = "Latency"
-	RequestBody  ExtraKey = "RequestBody"
-	ResponseBody ExtraKey = "ResponseBody"
-	ErrorMessage ExtraKey = "ErrorMessage"
+	AppName        ExtraKey    = "AppName"
+	LoggerName     ExtraKey    = "Logger"
+	ClientIp       ExtraKey    = "ClientIp"
+	HostIp         ExtraKey    = "HostIp"
+	Method         ExtraKey    = "Method"
+	StatusCode     ExtraKey    = "StatusCode"
+	BodySize       ExtraKey    = "BodySize"
+	Path           ExtraKey    = "Path"
+	Latency        ExtraKey    = "Latency"
+	RequestBody    ExtraKey    = "RequestBody"
+	ResponseBody   ExtraKey    = "ResponseBody"
+	ErrorMessage   ExtraKey    = "ErrorMessage"
+	EntityExtraKey ExtraKey    = "EntityExtraKey"
+	EventExtraKey  ExtraKey    = "EventExtraKey"
+	HandleEventExtraKey    ExtraKey = "HandleEventExtraKey"
 )

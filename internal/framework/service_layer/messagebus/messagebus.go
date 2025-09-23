@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
 )
@@ -47,22 +48,27 @@ type messageBus struct {
 	handledEvent    map[any]commandeventhandler.EventHandler
 	uow             unit_of_work.PGUnitOfWork
 	eventCh         chan any
+	log             logging.Logger
 }
 
-func NewMessageBus(uow unit_of_work.PGUnitOfWork) MessageBus {
+func NewMessageBus(uow unit_of_work.PGUnitOfWork, log logging.Logger) MessageBus {
 	bus := &messageBus{
 		handledCommands: make(map[any]commandeventhandler.CommandHandler),
 		handledEvent:    make(map[any]commandeventhandler.EventHandler),
 		uow:             uow,
 		eventCh:         make(chan any, 100),
+		log:             log,
 	}
 
 	// start event handler
 	go func(mb *messageBus, evCh chan any) {
 		for event := range evCh {
 			go func(ev any) {
+
 				if err := mb.HandleEvent(context.Background(), ev); err != nil {
-					fmt.Println("error handling event:", err)
+					mb.log.Error(logging.Internal, logging.HandleEvent, "error whene handle event", map[logging.ExtraKey]interface{}{
+						logging.HandleEventExtraKey: err.Error(),
+					})
 				}
 			}(event)
 		}
@@ -127,7 +133,6 @@ func (m *messageBus) Handle(ctx context.Context, cmd any) error {
 
 func (m *messageBus) HandleEvent(ctx context.Context, event any) error {
 	eventName := reflect.TypeOf(event).String()
-	fmt.Println("Handling event:", eventName, event)
 	if _, ok := m.handledEvent[eventName]; !ok {
 		return DoesNotExistEventHandlerError{reflect.TypeOf(eventName).String()}
 	}

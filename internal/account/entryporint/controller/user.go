@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"image/png"
 	"net/http"
 
@@ -51,6 +52,7 @@ func (u *UserController) Register(c *gin.Context) {
 	}
 
 	err := u.bus.Handle(ctx, cmd)
+	fmt.Println("...UserController: ", err)
 	if err != nil {
 		ginx.ResError(c, err)
 		return
