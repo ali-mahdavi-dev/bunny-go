@@ -9,7 +9,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	config "github.com/ali-mahdavi-dev/bunny-go/configs"
+	config "github.com/ali-mahdavi-dev/bunny-go/config"
 	"github.com/ali-mahdavi-dev/bunny-go/docs"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/databases"
@@ -31,15 +31,7 @@ func runHTTPServerCMD() *cobra.Command {
 
 func startServer(cfg *config.Config) error {
 
-	db, err := databases.New(databases.Config{
-		Debug:        cfg.Debug,
-		DBType:       cfg.Database.Type,
-		DSN:          cfg.Database.Dns,
-		MaxLifetime:  cfg.Database.MaxLifeTime,
-		MaxIdleTime:  cfg.Database.MaxIdleTime,
-		MaxIdleConns: cfg.Database.MaxIdleConns,
-		MaxOpenConns: cfg.Database.MaxOpenConns,
-	})
+	db, err := databases.New(cfg.Postgres)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +42,7 @@ func startServer(cfg *config.Config) error {
 	// Bootstrap
 	account.Bootstrap(server, db)
 
-	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	addr := fmt.Sprintf("%s:%s", cfg.Server.Domain, cfg.Server.InternalPort)
 	err = server.Run(addr)
 	if err != nil {
 		panic(err)
@@ -64,7 +56,7 @@ func registerSwagger(r *gin.Engine, cfg *config.Config) {
 	docs.SwaggerInfo.Description = "golang web api"
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.BasePath = "/api"
-	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.Host)
+	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.ExternalPort)
 	docs.SwaggerInfo.Schemes = []string{"http"}
 
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
-	config "github.com/ali-mahdavi-dev/bunny-go/configs"
+	config "github.com/ali-mahdavi-dev/bunny-go/config"
 )
 
 var (
@@ -27,12 +27,7 @@ func initializeConfigs() {
 		panic(err)
 	}
 
-	c, err := config.Load()
-	if err != nil {
-		log.Fatalf("could not load configuration %s\n", err.Error())
-	}
-
-	cfg = *c
+	cfg = *config.GetConfig()
 }
 
 func init() {

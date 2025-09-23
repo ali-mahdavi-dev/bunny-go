@@ -8,6 +8,8 @@ import (
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/commands"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/entity"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/events"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors/phrases"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
 	"github.com/hashicorp/go-uuid"
 )
@@ -25,7 +27,8 @@ func (h *UserHandler) Register(ctx context.Context, cmd *commands.RegisterUser) 
 		user, err := h.uow.User().FindByUserName(ctx, cmd.UserName)
 		if err != nil {
 			if err != repository.ErrUserNotFound {
-				return fmt.Errorf("UserHandler.Register error checking existing username: %w", err)
+				return cerrors.BadRequest(phrases.UserNotFound)
+				// return fmt.Errorf("UserHandler.Register error checking existing username: %w", err)
 			}
 		} else {
 			return fmt.Errorf("username %s is already taken", user.UserName)
