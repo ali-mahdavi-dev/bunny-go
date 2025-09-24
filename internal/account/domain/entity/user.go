@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/events"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/adapter"
 )
 
@@ -30,13 +29,5 @@ func NewUser(
 		LastName:         lastName,
 		Email:            email,
 		Password:         password,
-		BaseEntity: adapter.BaseEntity{
-			Events: []any{
-				&events.RegisterUserEvent{
-					UserName: userName,
-					Email:    email,
-				},
-			},
-		},
 	}
 }

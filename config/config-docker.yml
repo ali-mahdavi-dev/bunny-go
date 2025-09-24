@@ -48,6 +48,4 @@ otp:
   limiter: 100
 jwt:
   secret: "mySecretKey"
-  refreshSecret: "mySecretKey"
   accessTokenExpireDuration: 60
-  refreshTokenExpireDuration: 60

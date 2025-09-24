@@ -16,6 +16,7 @@ type PGUnitOfWork interface {
 	adapter.UnitOfWork
 	CollectNewEvents(eventCh chan<- any)
 	User() repository.UserRepository
+	Token() repository.TokenRepository
 }
 
 type pgUnitOfWork struct {
@@ -24,7 +25,8 @@ type pgUnitOfWork struct {
 	repositories []adapter.SeenedRepository
 
 	// repositories
-	user repository.UserRepository
+	user  repository.UserRepository
+	token repository.TokenRepository
 }
 
 func New(db *gorm.DB, logInstans logging.Logger) PGUnitOfWork {
@@ -53,7 +55,7 @@ func (uow *pgUnitOfWork) CollectNewEvents(eventCh chan<- any) {
 			for _, entity := range repo.Seen() {
 				for _, event := range entity.Event() {
 					uow.log.Info(logging.Internal, logging.Event, "send event", map[logging.ExtraKey]interface{}{
-						logging.EventExtraKey:  event,
+						logging.EventExtraKey: event,
 					})
 					eventCh <- event
 				}
@@ -76,4 +78,12 @@ func (uow *pgUnitOfWork) User() repository.UserRepository {
 	}
 
 	return uow.user
+}
+
+func (uow *pgUnitOfWork) Token() repository.TokenRepository {
+	if uow.token == nil {
+		uow.token = repository.NewTokenRepository(uow.GetSession())
+	}
+
+	return uow.token
 }

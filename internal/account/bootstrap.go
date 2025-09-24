@@ -9,7 +9,7 @@ import (
 	"github.com/ali-mahdavi-dev/bunny-go/config"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint/controller"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint/routes"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/handler"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
@@ -20,22 +20,20 @@ import (
 //go:embed assets/images/*
 var imagesFS embed.FS
 
-var LogInstans logging.Logger
-
-func Bootstrap(router *gin.Engine, db *gorm.DB, cfg *config.Config) error {
-	LogInstans = logging.NewLogger(cfg)
-	uow := unit_of_work.New(db, LogInstans)
-	bus := messagebus.NewMessageBus(uow, LogInstans)
+func Bootstrap(router *gin.Engine, db *gorm.DB, cfg *config.Config, logInstans logging.Logger) error {
+	uow := unit_of_work.New(db, logInstans)
+	bus := messagebus.NewMessageBus(uow, logInstans)
 
 	ag, err := adapter.NewAvatarGenerator(imagesFS)
 	if err != nil {
 		return err
 	}
 
-	// init controller
-	userController := controller.NewUserController(bus, ag)
+	// init handler
+	userHandler := handler.NewUserHandler(uow, cfg)
 
-	userHandler := handler.NewUserHandler(uow)
+	// init controller
+	userController := routes.NewUserController(bus, ag, userHandler)
 
 	// init router
 	entryporint.NewUserManagementRouter(router, entryporint.UserManagementRouter{
@@ -45,7 +43,8 @@ func Bootstrap(router *gin.Engine, db *gorm.DB, cfg *config.Config) error {
 	// init handler
 	bus.AddHandler(
 		// avatar
-		commandeventhandler.NewCommandHandler(userHandler.Register),
+		commandeventhandler.NewCommandHandler(userHandler.RegisterHandler),
+		commandeventhandler.NewCommandHandler(userHandler.LogoutHandler),
 	)
 	bus.AddHandlerEvent(
 		// avatar

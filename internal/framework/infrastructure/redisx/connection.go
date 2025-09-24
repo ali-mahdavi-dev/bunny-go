@@ -2,6 +2,7 @@ package redisx
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -54,6 +55,17 @@ func (r *connection) PushValues(ctx context.Context, key string, values []string
 		}
 	}
 	return nil
+}
+
+func (r *connection) Publish(ctx context.Context, channel string, message any) error {
+	if err := r.client.Publish(ctx, channel, message).Err(); err != nil {
+		return fmt.Errorf("connection.Publish fail to publish: %w", err)
+	}
+	return nil
+}
+
+func (r *connection) Subscribe(ctx context.Context, channel string) *redis.PubSub {
+	return r.client.Subscribe(ctx, channel)
 }
 
 func (r *connection) GetAllListValues(ctx context.Context, key string) ([]string, error) {

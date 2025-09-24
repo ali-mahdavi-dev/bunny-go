@@ -80,10 +80,8 @@ type OtpConfig struct {
 }
 
 type JWTConfig struct {
-	AccessTokenExpireDuration  time.Duration
-	RefreshTokenExpireDuration time.Duration
-	Secret                     string
-	RefreshSecret              string
+	AccessTokenExpireDuration time.Duration
+	Secret                    string
 }
 
 func GetConfig() *Config {

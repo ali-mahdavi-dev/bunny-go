@@ -7,19 +7,19 @@ import (
 )
 
 type Entity interface {
-	GetID() uint
+	GetID() uint64
 	Event() []any
 }
 
 type BaseEntity struct {
-	ID        uint  `gorm:"primaryKey"`
-	Events    []any `gorm:"-"`
+	ID        uint64 `gorm:"primaryKey"`
+	Events    []any  `gorm:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-func (u *BaseEntity) GetID() uint {
+func (u *BaseEntity) GetID() uint64 {
 	return u.ID
 }
 func (u *BaseEntity) Event() []any {

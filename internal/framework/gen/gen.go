@@ -1,6 +1,7 @@
-package main
+package gen
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -9,72 +10,56 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/go-openapi/spec"
-	"github.com/spf13/cast"
 	"github.com/swaggo/swag"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
+var open = os.Open
+
 // DefaultOverridesFile is the location swagger will look for type overrides.
 const DefaultOverridesFile = ".swaggo"
 
-const (
-	searchDirFlag            = "./"
-	excludeFlag              = ""
-	generalInfoFlag          = "main.go"
-	pipeFlag                 = false
-	propertyStrategyFlag     = "camelcase"
-	outputFlag               = "./docs"
-	outputTypesFlag          = "go,json,yaml"
-	parseVendorFlag          = false
-	parseDependencyFlag      = false
-	useStructNameFlag        = false
-	parseDependencyLevelFlag = 0
-	markdownFilesFlag        = ""
-	codeExampleFilesFlag     = ""
-	parseInternalFlag        = false
-	generatedTimeFlag        = false
-	requiredByDefaultFlag    = false
-	parseDepthFlag           = 100
-	instanceNameFlag         = ""
-	overridesFileFlag        = "swag.overrides.json"
-	parseGoListFlag          = true
-	quietFlag                = false
-	tagsFlag                 = ""
-	parseExtensionFlag       = ""
-	templateDelimsFlag       = ""
-	packageName              = ""
-	collectionFormatFlag     = "csv"
-	packagePrefixFlag        = ""
-	stateFlag                = ""
-	parseFuncBodyFlag        = false
-)
+type genTypeWriter func(*Config, *spec.Swagger) error
 
 // Gen presents a generate tool for swag.
 type Gen struct {
-	json       func(data interface{}) ([]byte, error)
-	jsonIndent func(data interface{}) ([]byte, error)
+	json          func(data interface{}) ([]byte, error)
+	jsonIndent    func(data interface{}) ([]byte, error)
+	jsonToYAML    func(data []byte) ([]byte, error)
+	outputTypeMap map[string]genTypeWriter
+	debug         Debugger
 }
 
+// Debugger is the interface that wraps the basic Printf method.
+type Debugger interface {
+	Printf(format string, v ...interface{})
+}
+
+// New creates a new Gen.
 func New() *Gen {
 	gen := Gen{
 		json: json.Marshal,
 		jsonIndent: func(data interface{}) ([]byte, error) {
 			return json.MarshalIndent(data, "", "    ")
 		},
+		debug: log.New(os.Stdout, "", log.LstdFlags),
+	}
+
+	gen.outputTypeMap = map[string]genTypeWriter{
+		"go":   gen.writeDocSwagger,
+		"json": gen.writeJSONSwagger,
+		"yaml": gen.writeYAMLSwagger,
+		"yml":  gen.writeYAMLSwagger,
 	}
 
 	return &gen
-}
-
-// Debugger is the interface that wraps the basic Printf method.
-type Debugger interface {
-	Printf(format string, v ...interface{})
 }
 
 // Config presents Gen configurations.
@@ -167,6 +152,215 @@ type Config struct {
 	ParseFuncBody bool
 }
 
+// Build builds swagger json file  for given searchDir and mainAPIFile. Returns json.
+func (g *Gen) Build(config *Config) error {
+	if config.Debugger != nil {
+		g.debug = config.Debugger
+	}
+	if config.InstanceName == "" {
+		config.InstanceName = swag.Name
+	}
+
+	searchDirs := strings.Split(config.SearchDir, ",")
+	for _, searchDir := range searchDirs {
+		if _, err := os.Stat(searchDir); os.IsNotExist(err) {
+			return fmt.Errorf("dir: %s does not exist", searchDir)
+		}
+	}
+
+	if config.LeftTemplateDelim == "" {
+		config.LeftTemplateDelim = "{{"
+	}
+
+	if config.RightTemplateDelim == "" {
+		config.RightTemplateDelim = "}}"
+	}
+
+	var overrides map[string]string
+
+	if config.OverridesFile != "" {
+		overridesFile, err := open(config.OverridesFile)
+		if err != nil {
+			// Don't bother reporting if the default file is missing; assume there are no overrides
+			if !(config.OverridesFile == DefaultOverridesFile && os.IsNotExist(err)) {
+				return fmt.Errorf("could not open overrides file: %w", err)
+			}
+		} else {
+			g.debug.Printf("Using overrides from %s", config.OverridesFile)
+
+			overrides, err = parseOverrides(overridesFile)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	g.debug.Printf("Generate swagger docs....")
+
+	p := swag.New(
+		swag.SetParseDependency(config.ParseDependency),
+		swag.SetUseStructName(config.UseStructNames),
+		swag.SetMarkdownFileDirectory(config.MarkdownFilesDir),
+		swag.SetDebugger(config.Debugger),
+		swag.SetExcludedDirsAndFiles(config.Excludes),
+		swag.SetParseExtension(config.ParseExtension),
+		swag.SetCodeExamplesDirectory(config.CodeExampleFilesDir),
+		swag.SetStrict(config.Strict),
+		swag.SetOverrides(overrides),
+		swag.ParseUsingGoList(config.ParseGoList),
+		swag.SetTags(config.Tags),
+		swag.SetCollectionFormat(config.CollectionFormat),
+		swag.SetPackagePrefix(config.PackagePrefix),
+	)
+
+	p.PropNamingStrategy = config.PropNamingStrategy
+	p.ParseVendor = config.ParseVendor
+	p.ParseInternal = config.ParseInternal
+	p.RequiredByDefault = config.RequiredByDefault
+	p.HostState = config.State
+	p.ParseFuncBody = config.ParseFuncBody
+
+	if err := p.ParseAPIMultiSearchDir(searchDirs, config.MainAPIFile, config.ParseDepth); err != nil {
+		return err
+	}
+
+	swagger := p.GetSwagger()
+
+	if err := os.MkdirAll(config.OutputDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	for _, outputType := range config.OutputTypes {
+		outputType = strings.ToLower(strings.TrimSpace(outputType))
+		if typeWriter, ok := g.outputTypeMap[outputType]; ok {
+			if err := typeWriter(config, swagger); err != nil {
+				return err
+			}
+		} else {
+			log.Printf("output type '%s' not supported", outputType)
+		}
+	}
+
+	return nil
+}
+
+func (g *Gen) writeDocSwagger(config *Config, swagger *spec.Swagger) error {
+	var filename = "docs.go"
+
+	if config.State != "" {
+		filename = config.State + "_" + filename
+	}
+
+	if config.InstanceName != swag.Name {
+		filename = config.InstanceName + "_" + filename
+	}
+
+	docFileName := path.Join(config.OutputDir, filename)
+
+	absOutputDir, err := filepath.Abs(config.OutputDir)
+	if err != nil {
+		return err
+	}
+
+	var packageName string
+	if len(config.PackageName) > 0 {
+		packageName = config.PackageName
+	} else {
+		packageName = filepath.Base(absOutputDir)
+		packageName = strings.ReplaceAll(packageName, "-", "_")
+	}
+
+	docs, err := os.Create(docFileName)
+	if err != nil {
+		return err
+	}
+	defer docs.Close()
+
+	// // Write doc
+	// err = g.WriteGoDoc(packageName, docs, swagger, config)
+	// if err != nil {
+	// 	return err
+	// }
+
+	g.debug.Printf("create docs.go at %+v", docFileName)
+
+	return nil
+}
+
+func (g *Gen) writeJSONSwagger(config *Config, swagger *spec.Swagger) error {
+	var filename = "swagger.json"
+
+	if config.State != "" {
+		filename = config.State + "_" + filename
+	}
+
+	if config.InstanceName != swag.Name {
+		filename = config.InstanceName + "_" + filename
+	}
+
+	jsonFileName := path.Join(config.OutputDir, filename)
+
+	b, err := g.jsonIndent(swagger)
+	if err != nil {
+		return err
+	}
+
+	err = g.writeFile(b, jsonFileName)
+	if err != nil {
+		return err
+	}
+
+	g.debug.Printf("create swagger.json at %+v", jsonFileName)
+
+	return nil
+}
+
+func (g *Gen) writeYAMLSwagger(config *Config, swagger *spec.Swagger) error {
+	var filename = "swagger.yaml"
+
+	if config.State != "" {
+		filename = config.State + "_" + filename
+	}
+
+	if config.InstanceName != swag.Name {
+		filename = config.InstanceName + "_" + filename
+	}
+
+	yamlFileName := path.Join(config.OutputDir, filename)
+
+	b, err := g.json(swagger)
+	if err != nil {
+		return err
+	}
+
+	y, err := g.jsonToYAML(b)
+	if err != nil {
+		return fmt.Errorf("cannot covert json to yaml error: %s", err)
+	}
+
+	err = g.writeFile(y, yamlFileName)
+	if err != nil {
+		return err
+	}
+
+	g.debug.Printf("create swagger.yaml at %+v", yamlFileName)
+
+	return nil
+}
+
+func (g *Gen) writeFile(b []byte, file string) error {
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	_, err = f.Write(b)
+
+	return err
+}
+
 func (g *Gen) formatSource(src []byte) []byte {
 	code, err := format.Source(src)
 	if err != nil {
@@ -176,10 +370,57 @@ func (g *Gen) formatSource(src []byte) []byte {
 	return code
 }
 
+// Read and parse the overrides file.
+func parseOverrides(r io.Reader) (map[string]string, error) {
+	overrides := make(map[string]string)
+	scanner := bufio.NewScanner(r)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Skip comments
+		if len(line) > 1 && line[0:2] == "//" {
+			continue
+		}
+
+		parts := strings.Fields(line)
+
+		switch len(parts) {
+		case 0:
+			// only whitespace
+			continue
+		case 2:
+			// either a skip or malformed
+			if parts[0] != "skip" {
+				return nil, fmt.Errorf("could not parse override: '%s'", line)
+			}
+
+			overrides[parts[1]] = ""
+		case 3:
+			// either a replace or malformed
+			if parts[0] != "replace" {
+				return nil, fmt.Errorf("could not parse override: '%s'", line)
+			}
+
+			overrides[parts[1]] = parts[2]
+		default:
+			return nil, fmt.Errorf("could not parse override: '%s'", line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading overrides file: %w", err)
+	}
+
+	return overrides, nil
+}
+
 func (g *Gen) WriteGoDoc(config *Config) error {
 	var packageName = "docs"
 	var filename = "docs.go"
 	var overrides map[string]string
+
+	g.debug.Printf("Generate swagger docs....")
 
 	p := swag.New(
 		swag.SetParseDependency(config.ParseDependency),
@@ -217,9 +458,7 @@ func (g *Gen) WriteGoDoc(config *Config) error {
 	swagger := p.GetSwagger()
 	docFileName := path.Join(config.OutputDir, filename)
 	output, err := os.Create(docFileName)
-	if err != nil {
-		fmt.Println("...err: ", err)
-	}
+
 	generator, err := template.New("swagger_info").Funcs(template.FuncMap{
 		"printDoc": func(v string) string {
 			// Add schemes
@@ -344,75 +583,3 @@ func init() {
 	swag.Register(Swagger{{ .State }}Info{{ if ne .InstanceName "swagger" }}{{ .InstanceName }} {{- end }}.InstanceName(), Swagger{{ .State }}Info{{ if ne .InstanceName "swagger" }}{{ .InstanceName }} {{- end }})
 }
 `
-
-// @title						bunny-go API Documentation.
-// @version					1.0.0
-// @description				API documentation for Bunny-go levels
-//
-// @description				توضیح: فلو اندپوینت های احراز هویت سمت کاربر
-// @schemes					http https
-// @securityDefinitions.apikey	BearerAuth
-// @type						apiKey
-// @in							header
-// @name						Authorization
-// @description				Type "Bearer" followed by a space and JWT token.
-func main() {
-	strategy := "camelcase"
-
-	outputTypes := strings.Split(cast.ToString(outputTypesFlag), ",")
-	if len(outputTypes) == 0 {
-		fmt.Println("no output types specified")
-	}
-	leftDelim, rightDelim := "{{", "}}"
-	// collectionFormat := swag.TransToValidCollectionFormat(
-	// 	cast.ToString(collectionFormatFlag),
-	// )
-	// if collectionFormat == "" {
-	// 	fmt.Println(
-	// 		"not supported %s collectionFormat",
-	// 		cast.ToString(collectionFormat),
-	// 	)
-	// }
-	logger := log.New(os.Stdout, "", log.LstdFlags)
-	if cast.ToBool(quietFlag) {
-		logger = log.New(io.Discard, "", log.LstdFlags)
-	}
-	var pdv = cast.ToInt(parseDependencyLevelFlag)
-	if pdv == 0 {
-		if cast.ToBool(parseDependencyFlag) {
-			pdv = 1
-		}
-	}
-
-	err:=New().WriteGoDoc(&Config{
-		SearchDir:           cast.ToString(searchDirFlag),
-		Excludes:            cast.ToString(excludeFlag),
-		ParseExtension:      cast.ToString(parseExtensionFlag),
-		MainAPIFile:         cast.ToString(generalInfoFlag),
-		PropNamingStrategy:  strategy,
-		OutputDir:           cast.ToString(outputFlag),
-		OutputTypes:         outputTypes,
-		ParseVendor:         cast.ToBool(parseVendorFlag),
-		ParseDependency:     pdv,
-		MarkdownFilesDir:    cast.ToString(markdownFilesFlag),
-		ParseInternal:       cast.ToBool(parseInternalFlag),
-		UseStructNames:      cast.ToBool(useStructNameFlag),
-		GeneratedTime:       cast.ToBool(generatedTimeFlag),
-		RequiredByDefault:   cast.ToBool(requiredByDefaultFlag),
-		CodeExampleFilesDir: cast.ToString(codeExampleFilesFlag),
-		ParseDepth:          cast.ToInt(parseDepthFlag),
-		InstanceName:        cast.ToString(instanceNameFlag),
-		OverridesFile:       cast.ToString(overridesFileFlag),
-		ParseGoList:         cast.ToBool(parseGoListFlag),
-		Tags:                cast.ToString(tagsFlag),
-		LeftTemplateDelim:   leftDelim,
-		RightTemplateDelim:  rightDelim,
-		PackageName:         cast.ToString(packageName),
-		Debugger:            logger,
-		// CollectionFormat:    collectionFormat,
-		PackagePrefix: cast.ToString(packagePrefixFlag),
-		State:         cast.ToString(stateFlag),
-		ParseFuncBody: cast.ToBool(parseFuncBodyFlag),
-	})
-	fmt.Println("err: ", err)
-}

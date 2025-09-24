@@ -9,3 +9,12 @@ type RegisterUser struct {
 	Email            string `json:"email" binding:"required,min=3"`
 	Password         string `json:"password" binding:"required,min=3"`
 }
+
+type LoginUser struct {
+	UserName string `json:"user_name" binding:"required,min=3"`
+	Password string `json:"password" binding:"required,min=3"`
+}
+
+type Logout struct {
+	UserID uint64
+}

@@ -1,0 +1,8 @@
+-- migrate:up
+CREATE TABLE tokens (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    token TEXT NOT NULL,
+    user_id INT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+-- migrate:down
