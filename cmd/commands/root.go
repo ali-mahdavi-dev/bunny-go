@@ -1,19 +1,20 @@
-package command
+package commands
 
 import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
 	config "github.com/ali-mahdavi-dev/bunny-go/config"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 )
 
 var (
-	cfg     config.Config
-	envFile string
-	rootCmd = &cobra.Command{
+	cfg        config.Config
+	envFile    string
+	LogInstans logging.Logger
+	rootCmd    = &cobra.Command{
 		Use: "",
 		Run: func(cmd *cobra.Command, args []string) {
 			initializeConfigs()
@@ -22,12 +23,8 @@ var (
 )
 
 func initializeConfigs() {
-	err := godotenv.Load(envFile)
-	if err != nil {
-		panic(err)
-	}
-
 	cfg = *config.GetConfig()
+	LogInstans = logging.NewLogger(&cfg)
 }
 
 func init() {

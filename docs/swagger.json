@@ -1,22 +1,242 @@
 {
-    "schemes": [
-        "http",
-        "https"
-    ],
     "swagger": "2.0",
     "info": {
-        "description": "API documentation for KYC levels\nتوضیح: فلو اندپوینت های احراز هویت سمت کاربر",
-        "title": "bunny-go API Documentation.",
-        "contact": {},
-        "version": "1.0.0"
+        "contact": {}
     },
-    "paths": {},
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
+    "paths": {
+        "/api/v1/public/login": {
+            "post": {
+                "description": "Authenticates a user and returns an access token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Login user",
+                "parameters": [
+                    {
+                        "description": "LoginUser",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Access token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or unknown provider",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable input (validation failed)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/logout": {
+            "post": {
+                "description": "Logs out the authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "200": {
+                        "description": "Logout completed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or unknown provider",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "401": {
+                        "description": "User not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable input (validation failed)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/register": {
+            "post": {
+                "description": "Handles user registration by parsing the request body and invoking the registration command.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "RegisterUser",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Registration successful",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or unknown provider",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable input (validation failed)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser": {
+            "type": "object",
+            "required": [
+                "password",
+                "user_name"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "user_name": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
+        "github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser": {
+            "type": "object",
+            "required": [
+                "avatar_identifier",
+                "email",
+                "first_name",
+                "last_name",
+                "password",
+                "user_name"
+            ],
+            "properties": {
+                "avatar_identifier": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "first_name": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "last_name": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "user_name": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
+        "github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {},
+                "page": {
+                    "type": "integer"
+                },
+                "pages": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }

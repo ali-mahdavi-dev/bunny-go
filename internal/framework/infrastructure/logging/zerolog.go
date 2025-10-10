@@ -48,6 +48,9 @@ func (l *zeroLogger) Init() {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 		fileName := fmt.Sprintf("%s%s-%s.%s", l.cfg.Logger.FilePath, time.Now().Format("2006-01-02"), uuid.New(), "log")
 
+		if err := os.MkdirAll(l.cfg.Logger.FilePath, 0755); err != nil {
+			panic(fmt.Sprintf("could not create log directory: %v", err))
+		}
 		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			panic("could not open log file")

@@ -1,6 +1,6 @@
 server:
-  internalPort: 5005
-  externalPort: 5005
+  internalPort: 8000
+  externalPort: 8000
   runMode: debug
   domain: localhost
   name: bunny-go
@@ -11,15 +11,15 @@ logger:
   filePath: ../logs/
   encoding: json
   level: debug
-  logger: zap
+  logger: zerolog
 cors:
   allowOrigins: "*"
 postgres:
   host: localhost
   port: 5432
   user: ali
-  password: 
-  dbName: car_sale_db
+  password: ""
+  dbName: "bunny_go"
   sslMode: disable
   maxIdleConns: 15
   maxOpenConns: 100
@@ -48,6 +48,4 @@ otp:
   limiter: 100
 jwt:
   secret: "mySecretKey"
-  refreshSecret: "mySecretKey"
   accessTokenExpireDuration: 1440
-  refreshTokenExpireDuration: 60

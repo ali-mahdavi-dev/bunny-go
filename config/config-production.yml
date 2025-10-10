@@ -11,7 +11,7 @@ logger:
   filePath: logs/
   encoding: json
   level: debug
-  logger: zap
+  logger: zerolog
 cors:
   allowOrigins: "*"
 postgres:
@@ -48,6 +48,4 @@ otp:
   limiter: 100
 jwt:
   secret: "mySecretKey"
-  refreshSecret: "mySecretKey"
   accessTokenExpireDuration: 1440
-  refreshTokenExpireDuration: 60

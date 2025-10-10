@@ -1,18 +1,163 @@
+definitions:
+  github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser:
+    properties:
+      password:
+        minLength: 3
+        type: string
+      user_name:
+        minLength: 3
+        type: string
+    required:
+    - password
+    - user_name
+    type: object
+  github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser:
+    properties:
+      avatar_identifier:
+        type: string
+      email:
+        minLength: 3
+        type: string
+      first_name:
+        minLength: 3
+        type: string
+      last_name:
+        minLength: 3
+        type: string
+      password:
+        minLength: 3
+        type: string
+      user_name:
+        minLength: 3
+        type: string
+    required:
+    - avatar_identifier
+    - email
+    - first_name
+    - last_name
+    - password
+    - user_name
+    type: object
+  github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult:
+    properties:
+      data: {}
+      error: {}
+      page:
+        type: integer
+      pages:
+        type: integer
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
 info:
   contact: {}
-  description: |-
-    API documentation for KYC levels
-    توضیح: فلو اندپوینت های احراز هویت سمت کاربر
-  title: bunny-go API Documentation.
-  version: 1.0.0
-paths: {}
-schemes:
-- http
-- https
-securityDefinitions:
-  BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
-    in: header
-    name: Authorization
-    type: apiKey
+paths:
+  /api/v1/public/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns an access token.
+      parameters:
+      - description: LoginUser
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body or unknown provider
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "401":
+          description: Authentication failed
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "422":
+          description: Unprocessable input (validation failed)
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+      summary: Login user
+      tags:
+      - users
+  /api/v1/public/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logs out the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout completed successfully
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "400":
+          description: Invalid request body or unknown provider
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "422":
+          description: Unprocessable input (validation failed)
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+      summary: Logout user
+      tags:
+      - users
+  /api/v1/public/register:
+    post:
+      consumes:
+      - application/json
+      description: Handles user registration by parsing the request body and invoking
+        the registration command.
+      parameters:
+      - description: RegisterUser
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration successful
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "400":
+          description: Invalid request body or unknown provider
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "422":
+          description: Unprocessable input (validation failed)
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+      summary: Register a new user
+      tags:
+      - users
 swagger: "2.0"

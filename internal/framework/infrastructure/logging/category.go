@@ -10,6 +10,7 @@ const (
 	Internal        Category = "Internal"
 	Postgres        Category = "Postgres"
 	Redis           Category = "Redis"
+	WS              Category = "WS"
 	Validation      Category = "Validation"
 	RequestResponse Category = "RequestResponse"
 	Prometheus      Category = "Prometheus"
@@ -33,26 +34,39 @@ const (
 	HashPassword        SubCategory = "HashPassword"
 	DefaultRoleNotFound SubCategory = "DefaultRoleNotFound"
 	FailedToCreateUser  SubCategory = "FailedToCreateUser"
+	Event               SubCategory = "Event"
+	HandleEvent         SubCategory = "HandleEvent"
 
 	// Validation
 	MobileValidation   SubCategory = "MobileValidation"
 	PasswordValidation SubCategory = "PasswordValidation"
 
 	// IO
-	RemoveFile SubCategory = "RemoveFile"
+	RemoveFile    SubCategory = "RemoveFile"
+	CanNotMarshal SubCategory = "CanNotMarshal"
+
+	// WS
+	WSOnConnect SubCategory = "WSOnConnect"
 )
 
 const (
-	AppName      ExtraKey = "AppName"
-	LoggerName   ExtraKey = "Logger"
-	ClientIp     ExtraKey = "ClientIp"
-	HostIp       ExtraKey = "HostIp"
-	Method       ExtraKey = "Method"
-	StatusCode   ExtraKey = "StatusCode"
-	BodySize     ExtraKey = "BodySize"
-	Path         ExtraKey = "Path"
-	Latency      ExtraKey = "Latency"
-	RequestBody  ExtraKey = "RequestBody"
-	ResponseBody ExtraKey = "ResponseBody"
-	ErrorMessage ExtraKey = "ErrorMessage"
+	AppName             ExtraKey = "AppName"
+	LoggerName          ExtraKey = "Logger"
+	ClientIp            ExtraKey = "ClientIp"
+	HostIp              ExtraKey = "HostIp"
+	Method              ExtraKey = "Method"
+	StatusCode          ExtraKey = "StatusCode"
+	BodySize            ExtraKey = "BodySize"
+	Path                ExtraKey = "Path"
+	Latency             ExtraKey = "Latency"
+	RequestBody         ExtraKey = "RequestBody"
+	ResponseBody        ExtraKey = "ResponseBody"
+	ErrorMessage        ExtraKey = "ErrorMessage"
+	EntityExtraKey      ExtraKey = "EntityExtraKey"
+	EventExtraKey       ExtraKey = "EventExtraKey"
+	HandleEventExtraKey ExtraKey = "HandleEventExtraKey"
+	JsonMarshalKey      ExtraKey = "JsonMarshalKey"
+	JsonMarshalValue    ExtraKey = "JsonMarshalValue"
+	WSSocketID          ExtraKey = "WSSocketID"
+	WSToken             ExtraKey = "WSToken"
 )
