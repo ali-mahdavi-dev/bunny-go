@@ -1,4 +1,4 @@
-package handler
+package command_handler
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/ali-mahdavi-dev/bunny-go/config"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/repository"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/commands"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/command"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/entity"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/events"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/api/jwt"
@@ -25,7 +25,7 @@ func NewUserHandler(uow unit_of_work.PGUnitOfWork, cfg *config.Config) *UserHand
 	return &UserHandler{uow: uow, cfg: cfg}
 }
 
-func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.RegisterUser) error {
+func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *command.RegisterUser) error {
 	return h.uow.Do(ctx, func(ctx context.Context) error {
 		_, err := h.uow.User().FindByUserName(ctx, cmd.UserName)
 		if err != nil {
@@ -52,7 +52,7 @@ func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.Registe
 	})
 }
 
-func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *commands.Logout) error {
+func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *command.Logout) error {
 	token, err := h.uow.Token().FindByUserID(ctx, cmd.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrTokenNotFound) {
@@ -69,7 +69,7 @@ func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *commands.Logout) e
 	return nil
 }
 
-func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *commands.LoginUser) (string, error) {
+func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *command.LoginUser) (string, error) {
 	var accessToken string
 	err := h.uow.Do(ctx, func(ctx context.Context) error {
 		user, err := h.uow.User().FindByUserName(ctx, cmd.UserName)
@@ -101,12 +101,13 @@ func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *commands.LoginUser)
 			return fmt.Errorf("UserHandler.LoginUseCase fail save token to db: %w", err)
 		}
 
+		h.uow.Commit()
 		return nil
 	})
 	if err != nil {
 		return "", fmt.Errorf("UserHandler.LoginUseCase fail transaction: %w", err)
-
 	}
+
 	return accessToken, nil
 }
 

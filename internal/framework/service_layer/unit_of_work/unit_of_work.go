@@ -1,7 +1,6 @@
 package unit_of_work
 
 import (
-	"context"
 	"sync"
 
 	"gorm.io/gorm"
@@ -9,7 +8,6 @@ import (
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/repository"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/adapter"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/types"
 )
 
 type PGUnitOfWork interface {
@@ -38,15 +36,6 @@ func New(db *gorm.DB, logInstans logging.Logger) PGUnitOfWork {
 	return uow
 }
 
-func (uow *pgUnitOfWork) Do(ctx context.Context, fc types.UowUseCase) error {
-	err := uow.UnitOfWork.Do(ctx, fc)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (uow *pgUnitOfWork) CollectNewEvents(eventCh chan<- any) {
 	var wg sync.WaitGroup
 
@@ -64,6 +53,9 @@ func (uow *pgUnitOfWork) CollectNewEvents(eventCh chan<- any) {
 	}
 
 	wg.Wait()
+	if err := uow.Commit(); err != nil {
+		
+	}
 	uow.clearRepo()
 }
 

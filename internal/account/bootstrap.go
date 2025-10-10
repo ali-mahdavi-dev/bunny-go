@@ -9,8 +9,8 @@ import (
 	"github.com/ali-mahdavi-dev/bunny-go/config"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint/routes"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint/handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/command_handler"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
@@ -30,10 +30,10 @@ func Bootstrap(router *gin.Engine, db *gorm.DB, cfg *config.Config, logInstans l
 	}
 
 	// init handler
-	userHandler := handler.NewUserHandler(uow, cfg)
+	userHandler := command_handler.NewUserHandler(uow, cfg)
 
 	// init controller
-	userController := routes.NewUserController(bus, ag, userHandler)
+	userController := handler.NewUserController(bus, ag, userHandler)
 
 	// init router
 	entryporint.NewUserManagementRouter(router, entryporint.UserManagementRouter{

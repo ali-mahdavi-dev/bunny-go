@@ -1,12 +1,12 @@
-package routes
+package handler
 
 import (
 	"image/png"
 	"net/http"
 
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/commands"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/command"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/command_handler"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors/phrases"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
@@ -18,10 +18,10 @@ import (
 type UserController struct {
 	bus messagebus.MessageBus
 	ag  *adapter.AvatarGenerator
-	uh  *handler.UserHandler
+	uh  *command_handler.UserHandler
 }
 
-func NewUserController(bus messagebus.MessageBus, ag *adapter.AvatarGenerator, uh *handler.UserHandler) *UserController {
+func NewUserController(bus messagebus.MessageBus, ag *adapter.AvatarGenerator, uh *command_handler.UserHandler) *UserController {
 	return &UserController{
 		bus: bus,
 		ag:  ag,
@@ -48,22 +48,22 @@ func (s *UserController) GenerateAvatarHandler(c *gin.Context) {
 	}
 }
 
-// Transfer godoc
+// Register godoc
 //
-//	@Summary		Transfer funds
-//	@Description	Transfers money to the specified destination account. The provider is automatically determined using the given FinancialServiceProviderID. Additionally, today's and this month's transaction amounts are calculated and tracked.
-//	@Tags			Banking
+//	@Summary		Register a new user
+//	@Description	Handles user registration by parsing the request body and invoking the registration command.
+//	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		commands.RegisterUser	true	"Transfer request data including destination account, amount, and FinancialServiceProviderID"
-//	@Success		200		{object}	ginx.ResponseResult		"Transfer completed successfully"
+//	@Param			request	body		command.RegisterUser	true	"RegisterUser"
+//	@Success		200		{object}	ginx.ResponseResult		"Registration successful"
 //	@Failure		400		{object}	ginx.ResponseResult		"Invalid request body or unknown provider"
 //	@Failure		422		{object}	ginx.ResponseResult		"Unprocessable input (validation failed)"
 //	@Failure		500		{object}	ginx.ResponseResult		"Internal server error"
-//	@Router			/internal/api/v1/banking/transfer/auto [post]
+//	@Router			/api/v1/public/register [post]
 func (u *UserController) Register(c *gin.Context) {
 	ctx := c.Request.Context()
-	cmd := new(commands.RegisterUser)
+	cmd := new(command.RegisterUser)
 	if err := ginx.ParseJSON(c, cmd); err != nil {
 		ginx.ResError(c, err)
 		return
@@ -78,9 +78,23 @@ func (u *UserController) Register(c *gin.Context) {
 	ginx.ResOK(c)
 }
 
+// Login godoc
+//
+//	@Summary		Login user
+//	@Description	Authenticates a user and returns an access token.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		command.LoginUser	true	"LoginUser"
+//	@Success		200		{object}	map[string]string	"Access token"
+//	@Failure		400		{object}	ginx.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		401		{object}	ginx.ResponseResult	"Authentication failed"
+//	@Failure		422		{object}	ginx.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500		{object}	ginx.ResponseResult	"Internal server error"
+//	@Router			/api/v1/public/login [post]
 func (u *UserController) Login(c *gin.Context) {
 	ctx := c.Request.Context()
-	cmd := new(commands.LoginUser)
+	cmd := new(command.LoginUser)
 	if err := ginx.ParseJSON(c, cmd); err != nil {
 		ginx.ResError(c, err)
 		return
@@ -98,6 +112,19 @@ func (u *UserController) Login(c *gin.Context) {
 
 }
 
+// Logout godoc
+//
+//	@Summary		Logout user
+//	@Description	Logs out the authenticated user.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	ginx.ResponseResult	"Logout completed successfully"
+//	@Failure		400	{object}	ginx.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		401	{object}	ginx.ResponseResult	"User not authenticated"
+//	@Failure		422	{object}	ginx.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500	{object}	ginx.ResponseResult	"Internal server error"
+//	@Router			/api/v1/public/logout [post]
 func (u *UserController) Logout(c *gin.Context) {
 	ctx := c.Request.Context()
 	userID, exists := c.Get("user_id")
@@ -105,7 +132,7 @@ func (u *UserController) Logout(c *gin.Context) {
 		ginx.ResError(c, cerrors.NotFound(phrases.UserNotFound))
 		return
 	}
-	cmd := new(commands.Logout)
+	cmd := new(command.Logout)
 	cmd.UserID = cast.ToUint64(userID)
 
 	err := u.bus.Handle(ctx, cmd)
