@@ -1,69 +1,59 @@
 package middleware
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
-	"github.com/ali-mahdavi-dev/bunny-go/pkg/ginx"
-	"github.com/gin-gonic/gin"
+	"github.com/ali-mahdavi-dev/bunny-go/pkg/httputils"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/spf13/cast"
 )
 
-var errFailGetTokenFromDB = errors.New("fail to get token from DB")
-var errTokenDoesNotExist = errors.New("token does nit exist")
-
-func AuthMiddleware(cfg *config.Config, uow unit_of_work.PGUnitOfWork) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Get the token from header
-		authHeader := c.GetHeader("Authorization")
+func (m *Middleware) AuthMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Get token from Authorization header
+		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
-			c.Abort()
-			return
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Authorization header required"})
 		}
 
-		// Format: "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
-			c.Abort()
-			return
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token format"})
 		}
 
 		tokenStr := parts[1]
 
+		// Parse JWT
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			// validate alg
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return cfg.JWT.Secret, nil
+			return m.Cfg.JWT.Secret, nil
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			c.Abort()
-			return
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token"})
 		}
 
-		// Store claims in context if needed
+		// Extract claims and validate token from DB
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			user, err := uow.Token().FindByUserID(c, cast.ToUint64(claims["user_id"]))
+			userID := cast.ToUint64(claims["user_id"])
+			user, err := m.Uow.Token().FindByUserID(c.UserContext(), userID)
 			if err != nil {
-				ginx.ResError(c, errFailGetTokenFromDB)
-				return
+				return httputils.ResError(c, errFailGetTokenFromDB)
 			}
 			if user.Token != tokenStr {
-				ginx.ResError(c, errTokenDoesNotExist)
-				return
+				return httputils.ResError(c, errTokenDoesNotExist)
 			}
-			c.Set("user_id", claims["user_id"])
+
+			// Store user_id in Fiber context
+			c.Locals("user_id", userID)
+		} else {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token claims"})
 		}
 
-		c.Next()
+		return c.Next()
 	}
 }

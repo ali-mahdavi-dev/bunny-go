@@ -1,24 +1,21 @@
-package ginx
+package httputils
 
 import (
 	"encoding/json"
 	"math"
-	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
-
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
+	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cast"
 )
 
-// Get access token from header or query parameter
-func GetToken(c *gin.Context) string {
-	var token string
-	auth := c.GetHeader("Authorization")
+// Token
+func GetToken(c *fiber.Ctx) string {
+	auth := c.Get("Authorization")
 	prefix := "Bearer "
+	token := ""
 
 	if auth != "" && strings.HasPrefix(auth, prefix) {
 		token = auth[len(prefix):]
@@ -33,63 +30,59 @@ func GetToken(c *gin.Context) string {
 	return token
 }
 
-// Parse body json data to struct
-func ParseJSON(c *gin.Context, obj interface{}) error {
-	if err := c.ShouldBindJSON(obj); err != nil {
+// Parsing
+func ParseJSON(c *fiber.Ctx, obj interface{}) error {
+	if err := c.BodyParser(obj); err != nil {
 		return cerrors.BadRequest("FailedParseJson", err.Error())
 	}
 	return nil
 }
 
-// Parse query parameter to struct
-func ParseQuery(c *gin.Context, obj interface{}) error {
-	if err := c.ShouldBindQuery(obj); err != nil {
+func ParseQuery(c *fiber.Ctx, obj interface{}) error {
+	if err := c.QueryParser(obj); err != nil {
 		return cerrors.BadRequest("FailedParseQuery", err.Error())
 	}
 	return nil
 }
 
-// Parse Pagination query parameter to struct
-func ParsePaginationQueryParam(c *gin.Context, obj *PaginationResult) error {
-	if err := c.ShouldBindQuery(obj); err != nil {
+func ParsePaginationQueryParam(c *fiber.Ctx, obj *PaginationResult) error {
+	if err := c.QueryParser(obj); err != nil {
 		return cerrors.BadRequest("FailedParseQuery", err.Error())
 	}
-
 	if obj.Limit < 1 {
 		obj.Limit = 10
 	}
 	return nil
 }
 
-// Parse body form data to struct
-func ParseForm(c *gin.Context, obj interface{}) error {
-	if err := c.ShouldBindWith(obj, binding.Form); err != nil {
+func ParseForm(c *fiber.Ctx, obj interface{}) error {
+	if err := c.BodyParser(obj); err != nil {
 		return cerrors.BadRequest("FailedParseForm", err.Error())
 	}
 	return nil
 }
 
-// Response json data with status code
-func ResJSON(c *gin.Context, status int, v interface{}) {
+// Responses
+func ResJSON(c *fiber.Ctx, status int, v interface{}) error {
 	buf, err := json.Marshal(v)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	c.Set(ResBodyKey, buf)
-	c.Data(status, "application/json; charset=utf-8", buf)
-	c.Abort()
+	c.Set(ResBodyKey, string(buf))
+	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSONCharsetUTF8)
+	c.Status(status)
+	return c.Send(buf)
 }
 
-func ResSuccess(c *gin.Context, v interface{}) {
-	ResJSON(c, http.StatusOK, ResponseResult{
+func ResSuccess(c *fiber.Ctx, v interface{}) error {
+	return ResJSON(c, fiber.StatusOK, ResponseResult{
 		Success: true,
 		Data:    v,
 	})
 }
 
-func ResOK(c *gin.Context) {
-	ResJSON(c, http.StatusOK, ResponseResult{
+func ResOK(c *fiber.Ctx) error {
+	return ResJSON(c, fiber.StatusOK, ResponseResult{
 		Success: true,
 	})
 }
@@ -100,7 +93,7 @@ func CalculatePagination(total, limit, skip int64) (int64, int64) {
 	return pages, page
 }
 
-func ResPage(c *gin.Context, v interface{}, pr *PaginationResult) {
+func ResPage(c *fiber.Ctx, v interface{}, pr *PaginationResult) error {
 	var total, pages, page int64
 	if pr != nil {
 		total = pr.Total
@@ -115,11 +108,13 @@ func ResPage(c *gin.Context, v interface{}, pr *PaginationResult) {
 	if page > pages {
 		page = pages
 	}
+
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
 	if reflectValue.IsNil() {
 		v = make([]interface{}, 0)
 	}
-	ResJSON(c, http.StatusOK, ResponseResult{
+
+	return ResJSON(c, fiber.StatusOK, ResponseResult{
 		Success: true,
 		Data:    v,
 		Total:   total,
@@ -128,7 +123,7 @@ func ResPage(c *gin.Context, v interface{}, pr *PaginationResult) {
 	})
 }
 
-func ResError(c *gin.Context, err error) {
+func ResError(c *fiber.Ctx, err error) error {
 	var ierr cerrors.Error
 	if e, ok := err.(cerrors.Error); ok {
 		ierr = e
@@ -138,5 +133,5 @@ func ResError(c *gin.Context, err error) {
 
 	code := int(ierr.Code())
 
-	ResJSON(c, code, ResponseResult{Error: ierr})
+	return ResJSON(c, code, ResponseResult{Error: ierr})
 }

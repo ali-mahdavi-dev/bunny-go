@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser"
+                            "$ref": "#/definitions/command.LoginUser"
                         }
                     }
                 ],
@@ -52,25 +52,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body or unknown provider",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "401": {
                         "description": "Authentication failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "422": {
                         "description": "Unprocessable input (validation failed)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     }
                 }
@@ -93,31 +93,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Logout completed successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "400": {
                         "description": "Invalid request body or unknown provider",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "401": {
                         "description": "User not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "422": {
                         "description": "Unprocessable input (validation failed)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     }
                 }
@@ -143,7 +143,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser"
+                            "$ref": "#/definitions/command.RegisterUser"
                         }
                     }
                 ],
@@ -151,25 +151,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Registration successful",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "400": {
                         "description": "Invalid request body or unknown provider",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "422": {
                         "description": "Unprocessable input (validation failed)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult"
+                            "$ref": "#/definitions/httputils.ResponseResult"
                         }
                     }
                 }
@@ -177,7 +177,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser": {
+        "command.LoginUser": {
             "type": "object",
             "required": [
                 "password",
@@ -194,7 +194,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser": {
+        "command.RegisterUser": {
             "type": "object",
             "required": [
                 "avatar_identifier",
@@ -230,7 +230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult": {
+        "httputils.ResponseResult": {
             "type": "object",
             "properties": {
                 "data": {},

@@ -10,8 +10,8 @@ import (
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors/phrases"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
-	"github.com/ali-mahdavi-dev/bunny-go/pkg/ginx"
-	"github.com/gin-gonic/gin"
+	"github.com/ali-mahdavi-dev/bunny-go/pkg/httputils"
+	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cast"
 )
 
@@ -29,23 +29,37 @@ func NewUserController(bus messagebus.MessageBus, ag *adapter.AvatarGenerator, u
 	}
 }
 
-// Gin handler to generate avatar and return as PNG
-func (s *UserController) GenerateAvatarHandler(c *gin.Context) {
-	identifier := c.Param("id")
+func (u *UserController) RegisterRoutes(r fiber.Router) {
+	publicRoute := r.Group("/api/v1/public")
+	{
+		publicRoute.Post("/avatar/:id", u.GenerateAvatarHandler)
+		publicRoute.Post("/register", u.Register)
+		publicRoute.Post("/login", u.Login)
+		publicRoute.Post("/logout", u.Logout)
+	}
+}
 
-	img, err := s.ag.Generate(identifier)
+func (u *UserController) GenerateAvatarHandler(c *fiber.Ctx) error {
+	identifier := c.Params("id")
+
+	img, err := u.ag.Generate(identifier)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
 	// Set headers for PNG response
-	c.Header("Content-Type", "image/png")
+	c.Set("Content-Type", "image/png")
 
-	// Encode directly to response
-	if err := png.Encode(c.Writer, img); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// Encode image directly to response
+	if err := png.Encode(c.Response().BodyWriter(), img); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
+
+	return nil
 }
 
 // Register godoc
@@ -56,26 +70,24 @@ func (s *UserController) GenerateAvatarHandler(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		command.RegisterUser	true	"RegisterUser"
-//	@Success		200		{object}	ginx.ResponseResult		"Registration successful"
-//	@Failure		400		{object}	ginx.ResponseResult		"Invalid request body or unknown provider"
-//	@Failure		422		{object}	ginx.ResponseResult		"Unprocessable input (validation failed)"
-//	@Failure		500		{object}	ginx.ResponseResult		"Internal server error"
+//	@Success		200		{object}	httputils.ResponseResult		"Registration successful"
+//	@Failure		400		{object}	httputils.ResponseResult		"Invalid request body or unknown provider"
+//	@Failure		422		{object}	httputils.ResponseResult		"Unprocessable input (validation failed)"
+//	@Failure		500		{object}	httputils.ResponseResult		"Internal server error"
 //	@Router			/api/v1/public/register [post]
-func (u *UserController) Register(c *gin.Context) {
-	ctx := c.Request.Context()
+func (u *UserController) Register(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	cmd := new(command.RegisterUser)
-	if err := ginx.ParseJSON(c, cmd); err != nil {
-		ginx.ResError(c, err)
-		return
+
+	if err := httputils.ParseJSON(c, cmd); err != nil {
+		return httputils.ResError(c, err)
 	}
 
-	err := u.bus.Handle(ctx, cmd)
-	if err != nil {
-		ginx.ResError(c, err)
-		return
+	if err := u.bus.Handle(ctx, cmd); err != nil {
+		return httputils.ResError(c, err)
 	}
 
-	ginx.ResOK(c)
+	return httputils.ResOK(c)
 }
 
 // Login godoc
@@ -87,29 +99,27 @@ func (u *UserController) Register(c *gin.Context) {
 //	@Produce		json
 //	@Param			request	body		command.LoginUser	true	"LoginUser"
 //	@Success		200		{object}	map[string]string	"Access token"
-//	@Failure		400		{object}	ginx.ResponseResult	"Invalid request body or unknown provider"
-//	@Failure		401		{object}	ginx.ResponseResult	"Authentication failed"
-//	@Failure		422		{object}	ginx.ResponseResult	"Unprocessable input (validation failed)"
-//	@Failure		500		{object}	ginx.ResponseResult	"Internal server error"
+//	@Failure		400		{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		401		{object}	httputils.ResponseResult	"Authentication failed"
+//	@Failure		422		{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500		{object}	httputils.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/login [post]
-func (u *UserController) Login(c *gin.Context) {
-	ctx := c.Request.Context()
+func (u *UserController) Login(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	cmd := new(command.LoginUser)
-	if err := ginx.ParseJSON(c, cmd); err != nil {
-		ginx.ResError(c, err)
-		return
+
+	if err := httputils.ParseJSON(c, cmd); err != nil {
+		return httputils.ResError(c, err)
 	}
 
 	token, err := u.uh.LoginUseCase(ctx, cmd)
 	if err != nil {
-		ginx.ResError(c, err)
-		return
+		return httputils.ResError(c, err)
 	}
 
-	ginx.ResJSON(c, http.StatusOK, map[string]string{
+	return httputils.ResJSON(c, http.StatusOK, fiber.Map{
 		"access": token,
 	})
-
 }
 
 // Logout godoc
@@ -119,27 +129,26 @@ func (u *UserController) Login(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	ginx.ResponseResult	"Logout completed successfully"
-//	@Failure		400	{object}	ginx.ResponseResult	"Invalid request body or unknown provider"
-//	@Failure		401	{object}	ginx.ResponseResult	"User not authenticated"
-//	@Failure		422	{object}	ginx.ResponseResult	"Unprocessable input (validation failed)"
-//	@Failure		500	{object}	ginx.ResponseResult	"Internal server error"
+//	@Success		200	{object}	httputils.ResponseResult	"Logout completed successfully"
+//	@Failure		400	{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		401	{object}	httputils.ResponseResult	"User not authenticated"
+//	@Failure		422	{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500	{object}	httputils.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/logout [post]
-func (u *UserController) Logout(c *gin.Context) {
-	ctx := c.Request.Context()
-	userID, exists := c.Get("user_id")
-	if !exists {
-		ginx.ResError(c, cerrors.NotFound(phrases.UserNotFound))
-		return
+func (u *UserController) Logout(c *fiber.Ctx) error {
+	ctx := c.UserContext()
+
+	userID := c.Get("user_id")
+	if userID == "" {
+		return httputils.ResError(c, cerrors.NotFound(phrases.UserNotFound))
 	}
+
 	cmd := new(command.Logout)
 	cmd.UserID = cast.ToUint64(userID)
 
-	err := u.bus.Handle(ctx, cmd)
-	if err != nil {
-		ginx.ResError(c, err)
-		return
+	if err := u.bus.Handle(ctx, cmd); err != nil {
+		return httputils.ResError(c, err)
 	}
 
-	ginx.ResOK(c)
+	return httputils.ResOK(c)
 }

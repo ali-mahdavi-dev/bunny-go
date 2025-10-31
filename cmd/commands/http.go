@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
+	"github.com/gofiber/contrib/swagger"
+	"github.com/gofiber/fiber/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 
 	config "github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/docs"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account"
+	mwF "github.com/ali-mahdavi-dev/bunny-go/internal/framework/api/middleware"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/databases"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/websocket"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
 )
 
 func runHTTPServerCMD() *cobra.Command {
@@ -33,58 +32,48 @@ func runHTTPServerCMD() *cobra.Command {
 }
 
 func startServer(cfg *config.Config) error {
-	serverWs := socketio.NewServer(nil)
-
-	ws := websocket.NewWebsocket(serverWs, LogInstans, cfg)
-	ws.AddWsRoutes()
-
-	go func() {
-		if err := serverWs.Serve(); err != nil {
-			log.Fatalf("socketio listen error: %s\n", err)
-		}
-	}()
-	defer serverWs.Close()
-
 	db, err := databases.New(cfg.Postgres)
 	if err != nil {
 		panic(err)
 	}
+	uow := unit_of_work.New(db, LogInstans)
 
-	server := gin.Default()
+	server := fiber.New()
 
-	// init ws
-	// برای upgrade کردن به websocket
-	server.GET("/socket.io/*any", gin.WrapH(serverWs))
-	server.POST("/socket.io/*any", gin.WrapH(serverWs))
+	// Middleware
+	middlewareF := mwF.NewMiddleware(cfg, uow)
+	middlewareF.Register(server)
 
-	// middleware
-	// server.Use(middleware.DefaultStructuredLogger(cfg))
-
-	// swagger
+	// Swagger
 	registerSwagger(server, cfg)
 
-	// metrics
-	server.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	// Metrics (Prometheus)
+	server.Get("/metrics", func(c *fiber.Ctx) error {
+		// Convert http.Handler to fasthttp.Handler
+		h := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
+		h(c.Context())
+		return nil
+	})
 
-	// Bootstrap
+	// Bootstrap application routes
 	account.Bootstrap(server, db, cfg, LogInstans)
 
+	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Domain, cfg.Server.InternalPort)
-	err = server.Run(addr)
-	if err != nil {
+	if err := server.Listen(addr); err != nil {
 		panic(err)
 	}
 
 	return nil
 }
 
-func registerSwagger(r *gin.Engine, cfg *config.Config) {
-	docs.SwaggerInfo.Title = "golang web api"
-	docs.SwaggerInfo.Description = "golang web api"
-	docs.SwaggerInfo.Version = "1.0"
-	docs.SwaggerInfo.BasePath = "/api"
-	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.ExternalPort)
-	docs.SwaggerInfo.Schemes = []string{"http"}
+func registerSwagger(app *fiber.App, cfg *config.Config) {
 
-	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	swCfg := swagger.Config{
+		Title:    "golang web api",
+		BasePath: fmt.Sprintf("localhost:%s/api", cfg.Server.ExternalPort),
+		FilePath: "docs/swagger.json",
+	}
+
+	app.Use(swagger.New(swCfg))
 }
