@@ -3,7 +3,6 @@ package account
 import (
 	"embed"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/ali-mahdavi-dev/bunny-go/config"
@@ -15,12 +14,13 @@ import (
 	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
+	"github.com/gofiber/fiber/v2"
 )
 
 //go:embed assets/images/*
 var imagesFS embed.FS
 
-func Bootstrap(router *gin.Engine, db *gorm.DB, cfg *config.Config, logInstans logging.Logger) error {
+func Bootstrap(router *fiber.App, db *gorm.DB, cfg *config.Config, logInstans logging.Logger) error {
 	uow := unit_of_work.New(db, logInstans)
 	bus := messagebus.NewMessageBus(uow, logInstans)
 
@@ -36,7 +36,8 @@ func Bootstrap(router *gin.Engine, db *gorm.DB, cfg *config.Config, logInstans l
 	userController := handler.NewUserController(bus, ag, userHandler)
 
 	// init router
-	entryporint.NewUserManagementRouter(router, entryporint.UserManagementRouter{
+	routerGroup := router.Group("")
+	entryporint.NewAccountRouter(routerGroup, entryporint.UserManagementRouter{
 		User: userController,
 	})
 

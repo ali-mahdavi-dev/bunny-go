@@ -1,5 +1,5 @@
 definitions:
-  github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser:
+  command.LoginUser:
     properties:
       password:
         minLength: 3
@@ -11,7 +11,7 @@ definitions:
     - password
     - user_name
     type: object
-  github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser:
+  command.RegisterUser:
     properties:
       avatar_identifier:
         type: string
@@ -38,7 +38,7 @@ definitions:
     - password
     - user_name
     type: object
-  github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult:
+  httputils.ResponseResult:
     properties:
       data: {}
       error: {}
@@ -65,7 +65,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.LoginUser'
+          $ref: '#/definitions/command.LoginUser'
       produces:
       - application/json
       responses:
@@ -78,19 +78,19 @@ paths:
         "400":
           description: Invalid request body or unknown provider
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "401":
           description: Authentication failed
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "422":
           description: Unprocessable input (validation failed)
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
       summary: Login user
       tags:
       - users
@@ -105,23 +105,23 @@ paths:
         "200":
           description: Logout completed successfully
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "400":
           description: Invalid request body or unknown provider
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "401":
           description: User not authenticated
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "422":
           description: Unprocessable input (validation failed)
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
       summary: Logout user
       tags:
       - users
@@ -137,26 +137,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_internal_account_domain_commands.RegisterUser'
+          $ref: '#/definitions/command.RegisterUser'
       produces:
       - application/json
       responses:
         "200":
           description: Registration successful
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "400":
           description: Invalid request body or unknown provider
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "422":
           description: Unprocessable input (validation failed)
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_ali-mahdavi-dev_bunny-go_pkg_ginx.ResponseResult'
+            $ref: '#/definitions/httputils.ResponseResult'
       summary: Register a new user
       tags:
       - users

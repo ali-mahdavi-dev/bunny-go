@@ -1,4 +1,4 @@
-package ginx
+package httputils
 
 import "github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
 
