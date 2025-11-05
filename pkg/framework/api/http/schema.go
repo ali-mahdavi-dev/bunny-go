@@ -1,6 +1,4 @@
-package httputils
-
-import "shikposh-backend/pkg/framework/cerrors"
+package http
 
 type Direction string
 
@@ -16,7 +14,7 @@ type ResponseResult struct {
 	Total   int64         `json:"total,omitempty"`
 	Page    int64         `json:"page,omitempty"`
 	Pages   int64         `json:"pages,omitempty"`
-	Error   cerrors.Error `json:"error,omitempty"`
+	Error   *HTTPError    `json:"error,omitempty"`
 }
 
 type PaginationResult struct {
@@ -46,3 +44,4 @@ func (a OrderByParams) ToSQL() string {
 	}
 	return sql
 }
+

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"shikposh-backend/pkg/httputils"
+	httpapi "shikposh-backend/pkg/framework/api/http"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -44,10 +44,10 @@ func (m *Middleware) AuthMiddleware() fiber.Handler {
 			ctx := c.Context()
 			user, err := m.Uow.Token(ctx).FindByUserID(ctx, userID)
 			if err != nil {
-				return httputils.ResError(c, errFailGetTokenFromDB)
+				return httpapi.ResError(c, errFailGetTokenFromDB)
 			}
 			if user.Token != tokenStr {
-				return httputils.ResError(c, errTokenDoesNotExist)
+				return httpapi.ResError(c, errTokenDoesNotExist)
 			}
 
 			// Store user_id in Fiber context

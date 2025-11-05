@@ -1,16 +1,39 @@
-package httputils
+package http
 
 import (
 	"encoding/json"
 	"math"
+	"net/http"
 	"reflect"
 	"strings"
 
-	"shikposh-backend/pkg/framework/cerrors"
+	"shikposh-backend/pkg/framework/errors"
+	"shikposh-backend/pkg/framework/errors/phrases"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/cast"
 )
+var statusMap = map[string]int{
+	http.StatusText(http.StatusBadRequest):           http.StatusBadRequest,
+	http.StatusText(http.StatusUnauthorized):           http.StatusUnauthorized,
+	http.StatusText(http.StatusPaymentRequired):        http.StatusPaymentRequired,
+	http.StatusText(http.StatusForbidden):              http.StatusForbidden,
+	http.StatusText(http.StatusNotFound):              http.StatusNotFound,
+	http.StatusText(http.StatusMethodNotAllowed):       http.StatusMethodNotAllowed,
+	http.StatusText(http.StatusConflict):              http.StatusConflict,
+	http.StatusText(http.StatusRequestEntityTooLarge):  http.StatusRequestEntityTooLarge,
+	http.StatusText(http.StatusRequestTimeout):        http.StatusRequestTimeout,
+	http.StatusText(http.StatusTooManyRequests):        http.StatusTooManyRequests,
+	http.StatusText(http.StatusInternalServerError):   http.StatusInternalServerError,
+}
+
+// statusTextToCode converts HTTP status text to status code
+func statusTextToCode(statusText string) int {
+	if code, ok := statusMap[statusText]; ok {
+		return code
+	}
+	return http.StatusInternalServerError
+}
 
 // Token
 func GetToken(c fiber.Ctx) string {
@@ -34,21 +57,21 @@ func GetToken(c fiber.Ctx) string {
 // Parsing
 func ParseJSON(c fiber.Ctx, obj interface{}) error {
 	if err := c.Bind().Body(obj); err != nil {
-		return cerrors.BadRequest("FailedParseJson", err.Error())
+		return errors.Validation(phrases.FailedParseJson, err.Error())
 	}
 	return nil
 }
 
 func ParseQuery(c fiber.Ctx, obj interface{}) error {
 	if err := c.Bind().Query(obj); err != nil {
-		return cerrors.BadRequest("FailedParseQuery", err.Error())
+		return errors.Validation(phrases.FailedParseQuery, err.Error())
 	}
 	return nil
 }
 
 func ParsePaginationQueryParam(c fiber.Ctx, obj *PaginationResult) error {
 	if err := c.Bind().Query(obj); err != nil {
-		return cerrors.BadRequest("FailedParseQuery", err.Error())
+		return errors.Validation(phrases.FailedParseQuery, err.Error())
 	}
 	if obj.Limit < 1 {
 		obj.Limit = 10
@@ -58,7 +81,7 @@ func ParsePaginationQueryParam(c fiber.Ctx, obj *PaginationResult) error {
 
 func ParseForm(c fiber.Ctx, obj interface{}) error {
 	if err := c.Bind().Body(obj); err != nil {
-		return cerrors.BadRequest("FailedParseForm", err.Error())
+		return errors.Validation(phrases.FailedParseForm, err.Error())
 	}
 	return nil
 }
@@ -128,14 +151,27 @@ func ResPage(c fiber.Ctx, v interface{}, pr *PaginationResult) error {
 }
 
 func ResError(c fiber.Ctx, err error) error {
-	var ierr cerrors.Error
-	if e, ok := err.(cerrors.Error); ok {
-		ierr = e
+	var httpErr Error
+	var statusCode int
+	
+	// Check if it's an app error (errors.Error)
+	if appErr, ok := errors.As(err); ok {
+		httpErr = ErrorToHTTP(appErr)
+		statusCode = errorTypeToHTTPStatus(appErr.Type())
+	} else if e, ok := err.(Error); ok {
+		// Already an HTTP error - need to get status code from status text
+		httpErr = e
+		statusCode = statusTextToCode(httpErr.Status())
 	} else {
-		ierr = cerrors.InternalServerError(cast.ToString(err))
+		// Convert to internal error
+		appErr := errors.Internal(cast.ToString(err))
+		httpErr = ErrorToHTTP(appErr)
+		statusCode = errorTypeToHTTPStatus(appErr.Type())
 	}
 
-	code := int(ierr.Code())
+	// Convert Error interface to HTTPError struct for JSON serialization
+	httpErrorStruct := ToHTTPError(httpErr)
 
-	return ResJSON(c, code, ResponseResult{Error: ierr})
+	return ResJSON(c, statusCode, ResponseResult{Error: httpErrorStruct})
 }
+

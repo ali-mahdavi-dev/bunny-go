@@ -3,7 +3,7 @@ package middleware
 import (
 	"errors"
 
-	"shikposh-backend/internal/framework/service_layer/unit_of_work"
+	"shikposh-backend/pkg/framework/service_layer/unit_of_work"
 
 	"github.com/gofiber/fiber/v3"
 )

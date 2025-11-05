@@ -7,10 +7,10 @@ import (
 	"shikposh-backend/internal/account/adapter"
 	"shikposh-backend/internal/account/domain/commands"
 	"shikposh-backend/internal/account/service_layer/command_handler"
-	"shikposh-backend/pkg/framework/cerrors"
-	"shikposh-backend/pkg/framework/cerrors/phrases"
+	httpapi "shikposh-backend/pkg/framework/api/http"
+	"shikposh-backend/pkg/framework/errors"
+	"shikposh-backend/pkg/framework/errors/phrases"
 	"shikposh-backend/pkg/framework/service_layer/messagebus"
-	"shikposh-backend/pkg/httputils"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/cast"
@@ -80,15 +80,15 @@ func (u *UserController) Register(c fiber.Ctx) error {
 	ctx := c.Context()
 	cmd := new(commands.RegisterUser)
 
-	if err := httputils.ParseJSON(c, cmd); err != nil {
-		return httputils.ResError(c, err)
+	if err := httpapi.ParseJSON(c, cmd); err != nil {
+		return httpapi.ResError(c, err)
 	}
 
 	if err := u.bus.Handle(ctx, cmd); err != nil {
-		return httputils.ResError(c, err)
+		return httpapi.ResError(c, err)
 	}
 
-	return httputils.ResOK(c)
+	return httpapi.ResOK(c)
 }
 
 // Login godoc
@@ -109,16 +109,16 @@ func (u *UserController) Login(c fiber.Ctx) error {
 	ctx := c.Context()
 	cmd := new(commands.LoginUser)
 
-	if err := httputils.ParseJSON(c, cmd); err != nil {
-		return httputils.ResError(c, err)
+	if err := httpapi.ParseJSON(c, cmd); err != nil {
+		return httpapi.ResError(c, err)
 	}
 
 	token, err := u.uh.LoginUseCase(ctx, cmd)
 	if err != nil {
-		return httputils.ResError(c, err)
+		return httpapi.ResError(c, err)
 	}
 
-	return httputils.ResJSON(c, http.StatusOK, fiber.Map{
+	return httpapi.ResJSON(c, http.StatusOK, fiber.Map{
 		"access": token,
 	})
 }
@@ -141,15 +141,15 @@ func (u *UserController) Logout(c fiber.Ctx) error {
 
 	userID := c.Get("user_id")
 	if userID == "" {
-		return httputils.ResError(c, cerrors.NotFound(phrases.UserNotFound))
+		return httpapi.ResError(c, errors.NotFound(phrases.UserNotFound))
 	}
 
 	cmd := new(commands.Logout)
 	cmd.UserID = cast.ToUint64(userID)
 
 	if err := u.bus.Handle(ctx, cmd); err != nil {
-		return httputils.ResError(c, err)
+		return httpapi.ResError(c, err)
 	}
 
-	return httputils.ResOK(c)
+	return httpapi.ResOK(c)
 }

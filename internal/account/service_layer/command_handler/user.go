@@ -2,7 +2,6 @@ package command_handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"shikposh-backend/config"
@@ -11,9 +10,11 @@ import (
 	"shikposh-backend/internal/account/domain/entity"
 	"shikposh-backend/internal/account/domain/events"
 	"shikposh-backend/pkg/framework/api/jwt"
-	"shikposh-backend/pkg/framework/cerrors"
-	"shikposh-backend/pkg/framework/cerrors/phrases"
-	"shikposh-backend/internal/framework/service_layer/unit_of_work"
+	apperrors "shikposh-backend/pkg/framework/errors"
+	"shikposh-backend/pkg/framework/errors/phrases"
+	"shikposh-backend/pkg/framework/service_layer/unit_of_work"
+
+	"github.com/pkg/errors"
 )
 
 type UserHandler struct {
@@ -26,6 +27,8 @@ func NewUserHandler(uow unit_of_work.PGUnitOfWork, cfg *config.Config) *UserHand
 }
 
 func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.RegisterUser) error {
+	return apperrors.Conflict(phrases.UserAlreadyExists)
+
 	return h.uow.Do(ctx, func(ctx context.Context) error {
 		_, err := h.uow.User(ctx).FindByUserName(ctx, cmd.UserName)
 		if err != nil {
@@ -33,7 +36,7 @@ func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.Registe
 				return fmt.Errorf("UserHandler.Register error checking existing username: %w", err)
 			}
 		} else {
-			return cerrors.BadRequest(phrases.UserAlreadyExists)
+			return apperrors.Conflict(phrases.UserAlreadyExists)
 		}
 
 		err = h.uow.User(ctx).Save(ctx, entity.NewUser(
@@ -56,7 +59,7 @@ func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *commands.Logout) e
 	token, err := h.uow.Token(ctx).FindByUserID(ctx, cmd.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrTokenNotFound) {
-			return cerrors.NotFound(phrases.UserNotFound)
+			return apperrors.NotFound(phrases.UserNotFound)
 		}
 
 		return fmt.Errorf("UserHandler.LogoutHandler failed to get token by userID: %w", err)
@@ -75,7 +78,7 @@ func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *commands.LoginUser)
 		user, err := h.uow.User(ctx).FindByUserName(ctx, cmd.UserName)
 		if err != nil {
 			if errors.Is(err, repository.ErrUserNotFound) {
-				return cerrors.NotFound(phrases.UserNotFound)
+				return apperrors.NotFound(phrases.UserNotFound)
 			}
 
 			return fmt.Errorf("UserHandler.LoginUseCase fail get user by username: %w", err)

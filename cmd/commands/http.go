@@ -13,9 +13,9 @@ import (
 
 	config "shikposh-backend/config"
 	"shikposh-backend/internal/account"
-	"shikposh-backend/internal/framework/service_layer/unit_of_work"
 	mwF "shikposh-backend/pkg/framework/api/middleware"
 	"shikposh-backend/pkg/framework/infrastructure/databases"
+	"shikposh-backend/pkg/framework/service_layer/unit_of_work"
 )
 
 func runHTTPServerCMD() *cobra.Command {
