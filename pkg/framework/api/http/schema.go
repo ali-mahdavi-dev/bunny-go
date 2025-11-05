@@ -9,12 +9,12 @@ const (
 )
 
 type ResponseResult struct {
-	Success bool          `json:"success"`
-	Data    interface{}   `json:"data,omitempty"`
-	Total   int64         `json:"total,omitempty"`
-	Page    int64         `json:"page,omitempty"`
-	Pages   int64         `json:"pages,omitempty"`
-	Error   *HTTPError    `json:"error,omitempty"`
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Total   int64       `json:"total,omitempty"`
+	Page    int64       `json:"page,omitempty"`
+	Pages   int64       `json:"pages,omitempty"`
+	Error   *HTTPError  `json:"error,omitempty"`
 }
 
 type PaginationResult struct {
@@ -44,4 +44,3 @@ func (a OrderByParams) ToSQL() string {
 	}
 	return sql
 }
-

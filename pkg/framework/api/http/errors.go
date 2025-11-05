@@ -10,10 +10,10 @@ import (
 
 // HTTPError is the HTTP-specific error representation
 type HTTPError struct {
-	Code    string `json:"code"`    // Error code (from error ID)
+	Code    string `json:"code"` // Error code (from error ID)
 	Message string `json:"message"`
 	Detail  string `json:"detail"`
-	Status  string `json:"status"`  // HTTP status text
+	Status  string `json:"status"` // HTTP status text
 }
 
 // ErrorToHTTP converts an app error to HTTP error with appropriate status code
@@ -21,12 +21,12 @@ func ErrorToHTTP(err errors.Error) Error {
 	statusCode := errorTypeToHTTPStatus(err.Type())
 
 	httpErr := HTTPError{
-		Code:    err.ID(),           // Use error ID as code
+		Code:    err.ID(), // Use error ID as code
 		Message: err.Message(),
 		Detail:  err.Detail(),
 		Status:  http.StatusText(statusCode),
 	}
-	
+
 	return &httpErrorAdapter{httpError: httpErr}
 }
 
@@ -72,10 +72,10 @@ type httpErrorAdapter struct {
 	httpError HTTPError
 }
 
-func (e *httpErrorAdapter) Code() string     { return e.httpError.Code }
-func (e *httpErrorAdapter) Message() string  { return e.httpError.Message }
-func (e *httpErrorAdapter) Detail() string   { return e.httpError.Detail }
-func (e *httpErrorAdapter) Status() string   { return e.httpError.Status }
+func (e *httpErrorAdapter) Code() string    { return e.httpError.Code }
+func (e *httpErrorAdapter) Message() string { return e.httpError.Message }
+func (e *httpErrorAdapter) Detail() string  { return e.httpError.Detail }
+func (e *httpErrorAdapter) Status() string  { return e.httpError.Status }
 func (e *httpErrorAdapter) Error() string {
 	b, _ := json.Marshal(e.httpError)
 	return string(b)
@@ -152,4 +152,3 @@ func InternalServerError(detail string) Error {
 	appErr := errors.Internal(detail)
 	return ErrorToHTTP(appErr)
 }
-

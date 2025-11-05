@@ -11,15 +11,15 @@ var errorMessagePhrase = map[Language]map[MessagePhrase]string{
 	Fa: {
 		// Default messages
 		DefaultValidationID:       "درخواست نامعتبر است",
-		DefaultNotFoundID:          "منبع یافت نشد",
+		DefaultNotFoundID:         "منبع یافت نشد",
 		DefaultConflictID:         "درخواست با وضعیت فعلی در تضاد است",
-		DefaultUnauthorizedID:      "احراز هویت نشده است",
-		DefaultForbiddenID:         "دسترسی مجاز نیست",
-		DefaultTimeoutID:           "درخواست منقضی شده است",
-		DefaultRateLimitID:         "تعداد درخواست بیش از حد مجاز است",
-		DefaultTooLargeID:          "حجم درخواست بیش از حد مجاز است",
-		DefaultInternalID:          "خطای داخلی سرور",
-		DefaultMethodNotAllowedID:  "متد HTTP مجاز نیست",
+		DefaultUnauthorizedID:     "احراز هویت نشده است",
+		DefaultForbiddenID:        "دسترسی مجاز نیست",
+		DefaultTimeoutID:          "درخواست منقضی شده است",
+		DefaultRateLimitID:        "تعداد درخواست بیش از حد مجاز است",
+		DefaultTooLargeID:         "حجم درخواست بیش از حد مجاز است",
+		DefaultInternalID:         "خطای داخلی سرور",
+		DefaultMethodNotAllowedID: "متد HTTP مجاز نیست",
 
 		// User messages
 		UserNotFound:      "کاربر پیدا نشد",
@@ -34,15 +34,15 @@ var errorMessagePhrase = map[Language]map[MessagePhrase]string{
 	En: {
 		// Default messages
 		DefaultValidationID:       "Invalid request",
-		DefaultNotFoundID:          "Resource not found",
+		DefaultNotFoundID:         "Resource not found",
 		DefaultConflictID:         "Request conflicts with current state",
-		DefaultUnauthorizedID:      "Unauthorized",
-		DefaultForbiddenID:         "Forbidden",
-		DefaultTimeoutID:           "Request timeout",
-		DefaultRateLimitID:         "Too many requests",
-		DefaultTooLargeID:          "Request entity too large",
-		DefaultInternalID:          "Internal server error",
-		DefaultMethodNotAllowedID:  "Method not allowed",
+		DefaultUnauthorizedID:     "Unauthorized",
+		DefaultForbiddenID:        "Forbidden",
+		DefaultTimeoutID:          "Request timeout",
+		DefaultRateLimitID:        "Too many requests",
+		DefaultTooLargeID:         "Request entity too large",
+		DefaultInternalID:         "Internal server error",
+		DefaultMethodNotAllowedID: "Method not allowed",
 
 		// User messages
 		UserNotFound:      "User not found",
@@ -79,4 +79,3 @@ func GetMessage(phrase MessagePhrase, lan Language) string {
 	// If not found in any language, return default message
 	return "Unknown error"
 }
-

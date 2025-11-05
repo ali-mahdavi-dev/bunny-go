@@ -201,13 +201,13 @@ func (l *loggerImpl) Log() {
 	if l.msg == "" {
 		return // No message set, can't log
 	}
-	
+
 	if !l.shouldLog(l.level) {
 		return
 	}
-	
+
 	l.adapter.Log(l.level, l.msg, l.fields)
-	
+
 	// Clear fields after logging
 	l.fields = make([]LogField, 0)
 	l.msg = ""

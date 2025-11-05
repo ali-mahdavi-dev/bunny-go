@@ -2,7 +2,6 @@ package handler
 
 import (
 	"image/png"
-	"net/http"
 
 	"shikposh-backend/internal/account/adapter"
 	"shikposh-backend/internal/account/domain/commands"
@@ -45,9 +44,7 @@ func (u *UserController) GenerateAvatarHandler(c fiber.Ctx) error {
 
 	img, err := u.ag.Generate(identifier)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return httpapi.ResError(c, err)
 	}
 
 	// Set headers for PNG response
@@ -55,9 +52,7 @@ func (u *UserController) GenerateAvatarHandler(c fiber.Ctx) error {
 
 	// Encode image directly to response
 	if err := png.Encode(c.Response().BodyWriter(), img); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return httpapi.ResError(c, err)
 	}
 
 	return nil
@@ -70,11 +65,12 @@ func (u *UserController) GenerateAvatarHandler(c fiber.Ctx) error {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		commands.RegisterUser		true	"RegisterUser"
-//	@Success		200		{object}	httputils.ResponseResult	"Registration successful"
-//	@Failure		400		{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
-//	@Failure		422		{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
-//	@Failure		500		{object}	httputils.ResponseResult	"Internal server error"
+//	@Param			request	body		commands.RegisterUser	true	"RegisterUser request"
+//	@Success		200		{object}	httpapi.ResponseResult	"Registration successful"
+//	@Failure		400		{object}	httpapi.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		409		{object}	httpapi.ResponseResult	"User already exists"
+//	@Failure		422		{object}	httpapi.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500		{object}	httpapi.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/register [post]
 func (u *UserController) Register(c fiber.Ctx) error {
 	ctx := c.Context()
@@ -84,8 +80,13 @@ func (u *UserController) Register(c fiber.Ctx) error {
 		return httpapi.ResError(c, err)
 	}
 
-	if err := u.bus.Handle(ctx, cmd); err != nil {
+	result, err := u.bus.Handle(ctx, cmd)
+	if err != nil {
 		return httpapi.ResError(c, err)
+	}
+
+	if result != nil {
+		return httpapi.ResSuccess(c, result)
 	}
 
 	return httpapi.ResOK(c)
@@ -98,12 +99,12 @@ func (u *UserController) Register(c fiber.Ctx) error {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		commands.LoginUser			true	"LoginUser"
-//	@Success		200		{object}	map[string]string			"Access token"
-//	@Failure		400		{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
-//	@Failure		401		{object}	httputils.ResponseResult	"Authentication failed"
-//	@Failure		422		{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
-//	@Failure		500		{object}	httputils.ResponseResult	"Internal server error"
+//	@Param			request	body		commands.LoginUser		true	"LoginUser"
+//	@Success		200		{object}	map[string]string		"Access token"
+//	@Failure		400		{object}	httpapi.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		401		{object}	httpapi.ResponseResult	"Authentication failed"
+//	@Failure		422		{object}	httpapi.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500		{object}	httpapi.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/login [post]
 func (u *UserController) Login(c fiber.Ctx) error {
 	ctx := c.Context()
@@ -118,7 +119,7 @@ func (u *UserController) Login(c fiber.Ctx) error {
 		return httpapi.ResError(c, err)
 	}
 
-	return httpapi.ResJSON(c, http.StatusOK, fiber.Map{
+	return httpapi.ResSuccess(c, fiber.Map{
 		"access": token,
 	})
 }
@@ -127,14 +128,17 @@ func (u *UserController) Login(c fiber.Ctx) error {
 //
 //	@Summary		Logout user
 //	@Description	Logs out the authenticated user.
+//	@Description	Example success response: {"success": true}
+//	@Description	Example error response: {"success": false, "error": {"code": "USER_NOT_FOUND", "message": "User not found", "status": "Not Found"}}
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	httputils.ResponseResult	"Logout completed successfully"
-//	@Failure		400	{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
-//	@Failure		401	{object}	httputils.ResponseResult	"User not authenticated"
-//	@Failure		422	{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
-//	@Failure		500	{object}	httputils.ResponseResult	"Internal server error"
+//	@Success		200	{object}	httpapi.ResponseResult	"Logout completed successfully"
+//	@Failure		400	{object}	httpapi.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		401	{object}	httpapi.ResponseResult	"User not authenticated"
+//	@Failure		404	{object}	httpapi.ResponseResult	"User not found"
+//	@Failure		422	{object}	httpapi.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500	{object}	httpapi.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/logout [post]
 func (u *UserController) Logout(c fiber.Ctx) error {
 	ctx := c.Context()
@@ -147,7 +151,8 @@ func (u *UserController) Logout(c fiber.Ctx) error {
 	cmd := new(commands.Logout)
 	cmd.UserID = cast.ToUint64(userID)
 
-	if err := u.bus.Handle(ctx, cmd); err != nil {
+	_, err := u.bus.Handle(ctx, cmd)
+	if err != nil {
 		return httpapi.ResError(c, err)
 	}
 

@@ -36,10 +36,24 @@ definitions:
     - password
     - user_name
     type: object
-  httputils.ResponseResult:
+  http.HTTPError:
+    properties:
+      code:
+        description: Error code (from error ID)
+        type: string
+      detail:
+        type: string
+      message:
+        type: string
+      status:
+        description: HTTP status text
+        type: string
+    type: object
+  http.ResponseResult:
     properties:
       data: {}
-      error: {}
+      error:
+        $ref: '#/definitions/http.HTTPError'
       page:
         type: integer
       pages:
@@ -76,19 +90,19 @@ paths:
         "400":
           description: Invalid request body or unknown provider
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "401":
           description: Authentication failed
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "422":
           description: Unprocessable input (validation failed)
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
       summary: Login user
       tags:
       - users
@@ -96,30 +110,37 @@ paths:
     post:
       consumes:
       - application/json
-      description: Logs out the authenticated user.
+      description: |-
+        Logs out the authenticated user.
+        Example success response: {"success": true}
+        Example error response: {"success": false, "error": {"code": "USER_NOT_FOUND", "message": "User not found", "status": "Not Found"}}
       produces:
       - application/json
       responses:
         "200":
           description: Logout completed successfully
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "400":
           description: Invalid request body or unknown provider
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "401":
           description: User not authenticated
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/http.ResponseResult'
         "422":
           description: Unprocessable input (validation failed)
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
       summary: Logout user
       tags:
       - users
@@ -130,7 +151,7 @@ paths:
       description: Handles user registration by parsing the request body and invoking
         the registration command.
       parameters:
-      - description: RegisterUser
+      - description: RegisterUser request
         in: body
         name: request
         required: true
@@ -142,19 +163,23 @@ paths:
         "200":
           description: Registration successful
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "400":
           description: Invalid request body or unknown provider
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
+        "409":
+          description: User already exists
+          schema:
+            $ref: '#/definitions/http.ResponseResult'
         "422":
           description: Unprocessable input (validation failed)
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/httputils.ResponseResult'
+            $ref: '#/definitions/http.ResponseResult'
       summary: Register a new user
       tags:
       - users

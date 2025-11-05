@@ -40,7 +40,7 @@ func (d DoesNotExistEventHandlerError) Error() string {
 type MessageBus interface {
 	AddHandler(handlers ...commandeventhandler.CommandHandler) error
 	AddHandlerEvent(handlers ...commandeventhandler.EventHandler) error
-	Handle(ctx context.Context, cmd any) error
+	Handle(ctx context.Context, cmd any) (any, error)
 }
 
 type messageBus struct {
@@ -110,7 +110,7 @@ func (m *messageBus) AddEvent(handlers ...commandeventhandler.EventHandler) erro
 	return nil
 }
 
-func (m *messageBus) Handle(ctx context.Context, cmd any) error {
+func (m *messageBus) Handle(ctx context.Context, cmd any) (any, error) {
 	cmdName := reflect.TypeOf(cmd).String()
 
 	logging.Debug("Handling command").
@@ -123,16 +123,18 @@ func (m *messageBus) Handle(ctx context.Context, cmd any) error {
 			WithAny("command_name", cmdName).
 			WithError(err).
 			Log()
-		return err
+		return nil, err
+
 	}
 
-	err := m.handledCommands[cmdName].Handle(ctx, cmd)
+	result, err := m.handledCommands[cmdName].Handle(ctx, cmd)
 	if err != nil {
 		logging.Error("Command handler failed").
 			WithAny("command_name", cmdName).
 			WithError(err).
 			Log()
-		return err
+		return nil, err
+
 	}
 
 	logging.Debug("Collecting domain events from transaction").
@@ -146,7 +148,7 @@ func (m *messageBus) Handle(ctx context.Context, cmd any) error {
 		WithAny("command_name", cmdName).
 		Log()
 
-	return nil
+	return result, nil
 }
 
 func (m *messageBus) HandleEvent(ctx context.Context, event any) error {

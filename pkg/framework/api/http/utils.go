@@ -13,17 +13,18 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/cast"
 )
+
 var statusMap = map[string]int{
-	http.StatusText(http.StatusBadRequest):           http.StatusBadRequest,
-	http.StatusText(http.StatusUnauthorized):           http.StatusUnauthorized,
-	http.StatusText(http.StatusPaymentRequired):        http.StatusPaymentRequired,
-	http.StatusText(http.StatusForbidden):              http.StatusForbidden,
+	http.StatusText(http.StatusBadRequest):            http.StatusBadRequest,
+	http.StatusText(http.StatusUnauthorized):          http.StatusUnauthorized,
+	http.StatusText(http.StatusPaymentRequired):       http.StatusPaymentRequired,
+	http.StatusText(http.StatusForbidden):             http.StatusForbidden,
 	http.StatusText(http.StatusNotFound):              http.StatusNotFound,
-	http.StatusText(http.StatusMethodNotAllowed):       http.StatusMethodNotAllowed,
+	http.StatusText(http.StatusMethodNotAllowed):      http.StatusMethodNotAllowed,
 	http.StatusText(http.StatusConflict):              http.StatusConflict,
-	http.StatusText(http.StatusRequestEntityTooLarge):  http.StatusRequestEntityTooLarge,
+	http.StatusText(http.StatusRequestEntityTooLarge): http.StatusRequestEntityTooLarge,
 	http.StatusText(http.StatusRequestTimeout):        http.StatusRequestTimeout,
-	http.StatusText(http.StatusTooManyRequests):        http.StatusTooManyRequests,
+	http.StatusText(http.StatusTooManyRequests):       http.StatusTooManyRequests,
 	http.StatusText(http.StatusInternalServerError):   http.StatusInternalServerError,
 }
 
@@ -153,7 +154,7 @@ func ResPage(c fiber.Ctx, v interface{}, pr *PaginationResult) error {
 func ResError(c fiber.Ctx, err error) error {
 	var httpErr Error
 	var statusCode int
-	
+
 	// Check if it's an app error (errors.Error)
 	if appErr, ok := errors.As(err); ok {
 		httpErr = ErrorToHTTP(appErr)
@@ -174,4 +175,3 @@ func ResError(c fiber.Ctx, err error) error {
 
 	return ResJSON(c, statusCode, ResponseResult{Error: httpErrorStruct})
 }
-

@@ -53,7 +53,7 @@ func newZerologAdapter(config LoggerConfig) (LoggerAdapter, error) {
 // Log logs a message at the specified level with fields
 func (z *zerologAdapter) Log(level LogLevel, msg string, fields []LogField) {
 	event := z.logger.WithLevel(z.toZerologLevel(level))
-	
+
 	// Add fields using appropriate zerolog methods based on field type
 	for _, field := range fields {
 		switch field.Type {
@@ -99,7 +99,7 @@ func (z *zerologAdapter) Log(level LogLevel, msg string, fields []LogField) {
 			event = event.Interface(field.Key, field.Value)
 		}
 	}
-	
+
 	event.Msg(msg)
 }
 
@@ -126,4 +126,3 @@ func (z *zerologAdapter) toZerologLevel(level LogLevel) zerolog.Level {
 		return zerolog.InfoLevel
 	}
 }
-

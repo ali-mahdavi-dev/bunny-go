@@ -52,25 +52,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body or unknown provider",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "401": {
                         "description": "Authentication failed",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "422": {
                         "description": "Unprocessable input (validation failed)",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     }
                 }
@@ -78,7 +78,7 @@ const docTemplate = `{
         },
         "/api/v1/public/logout": {
             "post": {
-                "description": "Logs out the authenticated user.",
+                "description": "Logs out the authenticated user.\nExample success response: {\"success\": true}\nExample error response: {\"success\": false, \"error\": {\"code\": \"USER_NOT_FOUND\", \"message\": \"User not found\", \"status\": \"Not Found\"}}",
                 "consumes": [
                     "application/json"
                 ],
@@ -93,31 +93,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Logout completed successfully",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "400": {
                         "description": "Invalid request body or unknown provider",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "401": {
                         "description": "User not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "422": {
                         "description": "Unprocessable input (validation failed)",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     }
                 }
@@ -138,7 +144,7 @@ const docTemplate = `{
                 "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "RegisterUser",
+                        "description": "RegisterUser request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -151,25 +157,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Registration successful",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "400": {
                         "description": "Invalid request body or unknown provider",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
+                        }
+                    },
+                    "409": {
+                        "description": "User already exists",
+                        "schema": {
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "422": {
                         "description": "Unprocessable input (validation failed)",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/httputils.ResponseResult"
+                            "$ref": "#/definitions/http.ResponseResult"
                         }
                     }
                 }
@@ -228,11 +240,32 @@ const docTemplate = `{
                 }
             }
         },
-        "httputils.ResponseResult": {
+        "http.HTTPError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Error code (from error ID)",
+                    "type": "string"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "HTTP status text",
+                    "type": "string"
+                }
+            }
+        },
+        "http.ResponseResult": {
             "type": "object",
             "properties": {
                 "data": {},
-                "error": {},
+                "error": {
+                    "$ref": "#/definitions/http.HTTPError"
+                },
                 "page": {
                     "type": "integer"
                 },

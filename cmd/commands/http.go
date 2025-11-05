@@ -108,5 +108,5 @@ func registerSwagger(app *fiber.App, cfg *config.Config) {
 
 	app.Get("/swagger/*", swagger.New(swagger.Config{
 		URL: "/swagger.json",
-	})) 
+	}))
 }

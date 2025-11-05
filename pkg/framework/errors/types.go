@@ -58,4 +58,3 @@ func (e *AppError) Error() string {
 	}
 	return e.MessageField
 }
-

@@ -77,7 +77,7 @@ type LogField struct {
 type LoggerAdapter interface {
 	// Log at different levels with message and fields
 	Log(level LogLevel, msg string, fields []LogField)
-	
+
 	// Formatted logging
 	Logf(level LogLevel, template string, args ...interface{})
 }
@@ -90,7 +90,7 @@ type Logger interface {
 	Warn(msg string) Logger
 	Error(msg string) Logger
 	Fatal(msg string) Logger
-	
+
 	// Builder methods - return Logger for chaining
 	WithAny(key string, value interface{}) Logger
 	WithString(key, value string) Logger
@@ -100,10 +100,10 @@ type Logger interface {
 	WithBool(key string, value bool) Logger
 	WithError(err error) Logger
 	WithFields(fields map[string]interface{}) Logger
-	
+
 	// Log method - writes the accumulated log entry
 	Log()
-	
+
 	// Formatted logging methods
 	Debugf(template string, args ...interface{})
 	Infof(template string, args ...interface{})
@@ -111,4 +111,3 @@ type Logger interface {
 	Errorf(template string, args ...interface{})
 	Fatalf(template string, args ...interface{})
 }
-

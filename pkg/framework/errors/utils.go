@@ -22,4 +22,3 @@ func As(err error) (Error, bool) {
 	}
 	return nil, false
 }
-

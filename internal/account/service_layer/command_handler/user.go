@@ -22,37 +22,41 @@ type UserHandler struct {
 	cfg *config.Config
 }
 
+type RegisterResult struct {
+	UserID uint64 `json:"user_id"`
+}
+
 func NewUserHandler(uow unit_of_work.PGUnitOfWork, cfg *config.Config) *UserHandler {
 	return &UserHandler{uow: uow, cfg: cfg}
 }
 
-func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.RegisterUser) error {
-	return apperrors.Conflict(phrases.UserAlreadyExists)
+func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.RegisterUser) (RegisterResult, error) {
+	return RegisterResult{UserID: 1}, nil
 
-	return h.uow.Do(ctx, func(ctx context.Context) error {
-		_, err := h.uow.User(ctx).FindByUserName(ctx, cmd.UserName)
-		if err != nil {
-			if err != repository.ErrUserNotFound {
-				return fmt.Errorf("UserHandler.Register error checking existing username: %w", err)
-			}
-		} else {
-			return apperrors.Conflict(phrases.UserAlreadyExists)
-		}
+	// return h.uow.Do(ctx, func(ctx context.Context) error {
+	// 	_, err := h.uow.User(ctx).FindByUserName(ctx, cmd.UserName)
+	// 	if err != nil {
+	// 		if err != repository.ErrUserNotFound {
+	// 			return fmt.Errorf("UserHandler.Register error checking existing username: %w", err)
+	// 		}
+	// 	} else {
+	// 		return apperrors.Conflict(phrases.UserAlreadyExists)
+	// 	}
 
-		err = h.uow.User(ctx).Save(ctx, entity.NewUser(
-			cmd.AvatarIdentifier,
-			cmd.UserName,
-			cmd.FirstName,
-			cmd.LastName,
-			cmd.Email,
-			cmd.Password,
-		))
-		if err != nil {
-			return fmt.Errorf("UserHandler.Register error saving user: %w", err)
-		}
+	// 	err = h.uow.User(ctx).Save(ctx, entity.NewUser(
+	// 		cmd.AvatarIdentifier,
+	// 		cmd.UserName,
+	// 		cmd.FirstName,
+	// 		cmd.LastName,
+	// 		cmd.Email,
+	// 		cmd.Password,
+	// 	))
+	// 	if err != nil {
+	// 		return fmt.Errorf("UserHandler.Register error saving user: %w", err)
+	// 	}
 
-		return nil
-	})
+	// 	return nil
+	// })
 }
 
 func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *commands.Logout) error {

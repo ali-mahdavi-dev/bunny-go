@@ -41,9 +41,7 @@ func Bootstrap(router fiber.Router, db *gorm.DB, cfg *config.Config, logger logg
 
 	logging.Debug("Registering command and event handlers").Log()
 	bus.AddHandler(
-		commandeventhandler.NewCommandHandler(userHandler.RegisterHandler),
-	)
-	bus.AddHandler(
+		commandeventhandler.NewCommandHandlerWithResult(userHandler.RegisterHandler),
 		commandeventhandler.NewCommandHandler(userHandler.LogoutHandler),
 	)
 	bus.AddHandlerEvent(

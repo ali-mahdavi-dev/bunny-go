@@ -196,4 +196,3 @@ func MethodNotAllowed(id phrases.MessagePhrase, args ...interface{}) Error {
 		DetailField:  "",
 	}
 }
-
