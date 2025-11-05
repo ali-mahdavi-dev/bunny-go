@@ -14,6 +14,8 @@ import (
 	"sort"
 
 	"github.com/disintegration/imaging"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 )
 
 type AvatarGenerator struct {
@@ -28,25 +30,64 @@ func NewAvatarGenerator(imagesFS embed.FS) (*AvatarGenerator, error) {
 	var err error
 	g := &AvatarGenerator{imagesFS: imagesFS}
 
-	if g.bodies, err = loadLayerPaths(imagesFS, "assets/images/bodies/*"); err != nil {
-		return nil, err
-	}
-	if g.accessories, err = loadLayerPaths(imagesFS, "assets/images/accessories/*"); err != nil {
-		return nil, err
-	}
-	if g.glasses, err = loadLayerPaths(imagesFS, "assets/images/glasses/*"); err != nil {
-		return nil, err
-	}
-	if g.hats, err = loadLayerPaths(imagesFS, "assets/images/hats/*"); err != nil {
-		return nil, err
-	}
+	logging.Debug("Loading avatar image layers").Log()
 
+	if g.bodies, err = loadLayerPaths(imagesFS, "assets/images/bodies/*"); err != nil {
+		logging.Error("Failed to load body images").
+			WithError(err).
+			Log()
+		return nil, err
+	}
+	logging.Debug("Loaded body images").
+		WithInt("count", len(g.bodies)).
+		Log()
+
+	if g.accessories, err = loadLayerPaths(imagesFS, "assets/images/accessories/*"); err != nil {
+		logging.Error("Failed to load accessory images").
+			WithError(err).
+			Log()
+		return nil, err
+	}
+	logging.Debug("Loaded accessory images").
+		WithInt("count", len(g.accessories)).
+		Log()
+
+	if g.glasses, err = loadLayerPaths(imagesFS, "assets/images/glasses/*"); err != nil {
+		logging.Error("Failed to load glasses images").
+			WithError(err).
+			Log()
+		return nil, err
+	}
+	logging.Debug("Loaded glasses images").
+		WithInt("count", len(g.glasses)).
+		Log()
+
+	if g.hats, err = loadLayerPaths(imagesFS, "assets/images/hats/*"); err != nil {
+		logging.Error("Failed to load hat images").
+			WithError(err).
+			Log()
+		return nil, err
+	}
+	logging.Debug("Loaded hat images").
+		WithInt("count", len(g.hats)).
+		Log()
+
+	logging.Info("Avatar generator initialized successfully").Log()
 	return g, nil
 }
 
 func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
 	if len(g.bodies) == 0 || len(g.accessories) == 0 || len(g.glasses) == 0 || len(g.hats) == 0 {
-		return nil, errors.New("layers are empty")
+		err := errors.New("layers are empty")
+		logging.Error("Avatar generation failed: layers are empty").
+			WithString("identifier", identifier).
+			WithInt("bodies_count", len(g.bodies)).
+			WithInt("accessories_count", len(g.accessories)).
+			WithInt("glasses_count", len(g.glasses)).
+			WithInt("hats_count", len(g.hats)).
+			WithError(err).
+			Log()
+		return nil, err
 	}
 
 	seed := seedFromHash(identifier)
@@ -59,25 +100,50 @@ func (g *AvatarGenerator) Generate(identifier string) (image.Image, error) {
 
 	img0, err := decodeImage(g.imagesFS, layer0)
 	if err != nil {
-		return nil, err
+		logging.Error("Failed to decode body image").
+			WithString("identifier", identifier).
+			WithString("file", filepath.Base(layer0)).
+			WithError(err).
+			Log()
+		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer0), err)
 	}
 
 	img1, err := decodeImage(g.imagesFS, layer1)
 	if err != nil {
+		logging.Error("Failed to decode accessory image").
+			WithString("identifier", identifier).
+			WithString("file", filepath.Base(layer1)).
+			WithError(err).
+			Log()
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer1), err)
 	}
 	img2, err := decodeImage(g.imagesFS, layer2)
 	if err != nil {
+		logging.Error("Failed to decode glasses image").
+			WithString("identifier", identifier).
+			WithString("file", filepath.Base(layer2)).
+			WithError(err).
+			Log()
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer2), err)
 	}
+
 	img3, err := decodeImage(g.imagesFS, layer3)
 	if err != nil {
+		logging.Error("Failed to decode hat image").
+			WithString("identifier", identifier).
+			WithString("file", filepath.Base(layer3)).
+			WithError(err).
+			Log()
 		return nil, fmt.Errorf("failed to decode %s: %w", filepath.Base(layer3), err)
 	}
 
 	avatar := imaging.Overlay(img0, img1, image.Point{0, 0}, 1.0)
 	avatar = imaging.Overlay(avatar, img2, image.Point{0, 0}, 1.0)
 	avatar = imaging.Overlay(avatar, img3, image.Point{0, 0}, 1.0)
+
+	logging.Debug("Avatar generated successfully").
+		WithString("identifier", identifier).
+		Log()
 
 	return avatar, nil
 }

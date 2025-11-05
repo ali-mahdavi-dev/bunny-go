@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -37,7 +36,12 @@ func init() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Println(err)
+		// Logger might not be initialized, check if available
+		if logging.GetLogger() != nil {
+			logging.Error("Command execution failed").
+				WithError(err).
+				Log()
+		}
 		os.Exit(1)
 	}
 }

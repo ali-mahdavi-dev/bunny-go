@@ -2,41 +2,98 @@ package databases
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 )
 
-func New(cfg config.PostgresConfig) (*gorm.DB, error) {
-	var err error
-	cnn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=Asia/Tehran",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password,
-		cfg.DbName, cfg.SSLMode)
-	dbClient, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  cnn,
-		PreferSimpleProtocol: true, // disables implicit prepared statement usage
-	}))
-	fmt.Println("...cnn: ", cnn)
-	fmt.Printf("User: %s, DbName: %s\n", cfg.User, cfg.DbName)
+type Config struct {
+	Debug        bool
+	DBType       string
+	DSN          string
+	MaxLifetime  int
+	MaxIdleTime  int
+	MaxOpenConns int
+	MaxIdleConns int
+}
 
-	if err != nil {
+func New(cfg Config) (*gorm.DB, error) {
+	var dialector gorm.Dialector
+
+	switch strings.ToLower(cfg.DBType) {
+	case "postgres":
+		logging.Debug("Using PostgreSQL database").Log()
+		dialector = postgres.Open(cfg.DSN)
+	case "sqlite3":
+		logging.Debug("Using SQLite database").Log()
+		_ = os.MkdirAll(filepath.Dir(cfg.DSN), os.ModePerm)
+		dialector = sqlite.Open(cfg.DSN)
+	default:
+		err := fmt.Errorf("unsupported database type: %s", cfg.DBType)
+		logging.Error("Unsupported database type").
+			WithString("db_type", cfg.DBType).
+			WithError(err).
+			Log()
 		return nil, err
 	}
 
-	sqlDB, _ := dbClient.DB()
-	if err = sqlDB.Ping(); err != nil {
+	ormCfg := &gorm.Config{
+		SkipDefaultTransaction: true,
+		PrepareStmt:            true,
+		Logger:                 logger.Discard,
+	}
+
+	if cfg.Debug {
+		ormCfg.Logger = logger.Default
+		logging.Debug("Database debug mode enabled").Log()
+	}
+
+	db, err := gorm.Open(dialector, ormCfg)
+	if err != nil {
+		logging.Error("Failed to open database connection").
+			WithString("db_type", cfg.DBType).
+			WithError(err).
+			Log()
+		return nil, err
+	}
+
+	if cfg.Debug {
+		db = db.Debug()
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		logging.Error("Failed to get underlying SQL database").
+			WithError(err).
+			Log()
 		return nil, err
 	}
 
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
-	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime * time.Minute)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime) * time.Second)
+	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.MaxIdleTime) * time.Second)
 
-	if err := sqlDB.Ping(); err != nil {
+	logging.Debug("Testing database connection").
+		WithInt("max_open_conns", cfg.MaxOpenConns).
+		WithInt("max_idle_conns", cfg.MaxIdleConns).
+		Log()
+
+	if err = sqlDB.Ping(); err != nil {
+		logging.Error("Database ping failed").
+			WithError(err).
+			Log()
 		return nil, err
 	}
 
-	return dbClient, nil
+	logging.Info("Database connection pool configured successfully").Log()
+	return db, nil
 }

@@ -1,56 +1,56 @@
 package account
 
 import (
-	"embed"
-
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint/handler"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/command_handler"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/endpoint"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/endpoint/controller"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/handler"
 	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
-	"github.com/gofiber/fiber/v2"
 )
 
-//go:embed assets/images/*
-var imagesFS embed.FS
+func Bootstrap(router *gin.Engine, db *gorm.DB) error {
+	logging.Info("Initializing account module").Log()
 
-func Bootstrap(router *fiber.App, db *gorm.DB, cfg *config.Config, logInstans logging.Logger) error {
-	uow := unit_of_work.New(db, logInstans)
-	bus := messagebus.NewMessageBus(uow, logInstans)
+	logging.Debug("Creating unit of work").Log()
+	uow := unit_of_work.New(db)
 
-	ag, err := adapter.NewAvatarGenerator(imagesFS)
+	logging.Debug("Creating message bus").Log()
+	bus := messagebus.NewMessageBus(uow)
+
+	logging.Debug("Initializing avatar generator").Log()
+	ag, err := adapter.NewAvatarGenerator()
 	if err != nil {
+		logging.Error("Failed to initialize avatar generator").
+			WithError(err).
+			Log()
 		return err
 	}
 
-	// init handler
-	userHandler := command_handler.NewUserHandler(uow, cfg)
+	logging.Debug("Creating user controller").Log()
+	userController := controller.NewUserController(bus, ag)
 
-	// init controller
-	userController := handler.NewUserController(bus, ag, userHandler)
+	logging.Debug("Creating user handler").Log()
+	userHandler := handler.NewUserHandler(uow)
 
-	// init router
-	routerGroup := router.Group("")
-	entryporint.NewAccountRouter(routerGroup, entryporint.UserManagementRouter{
+	logging.Debug("Registering routes").Log()
+	endpoint.NewUserManagementRouter(router, endpoint.UserManagementRouter{
 		User: userController,
 	})
 
-	// init handler
+	logging.Debug("Registering command and event handlers").Log()
 	bus.AddHandler(
-		// avatar
-		commandeventhandler.NewCommandHandler(userHandler.RegisterHandler),
-		commandeventhandler.NewCommandHandler(userHandler.LogoutHandler),
+		commandeventhandler.NewCommandHandler(userHandler.Register),
 	)
 	bus.AddHandlerEvent(
-		// avatar
 		commandeventhandler.NewEventHandler(userHandler.RegisterEvent),
 	)
 
+	logging.Info("Account module bootstrapped successfully").Log()
 	return nil
 }

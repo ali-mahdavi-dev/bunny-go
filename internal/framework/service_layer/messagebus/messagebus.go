@@ -40,7 +40,7 @@ func (d DoesNotExistEventHandlerError) Error() string {
 type MessageBus interface {
 	AddHandler(handlers ...commandeventhandler.CommandHandler) error
 	AddHandlerEvent(handlers ...commandeventhandler.EventHandler) error
-	Handle(ctx context.Context, cmd any) error
+	 Handle(ctx context.Context, cmd any) error
 }
 
 type messageBus struct {
@@ -48,31 +48,27 @@ type messageBus struct {
 	handledEvent    map[any]commandeventhandler.EventHandler
 	uow             unit_of_work.PGUnitOfWork
 	eventCh         chan any
-	log             logging.Logger
 }
 
-func NewMessageBus(uow unit_of_work.PGUnitOfWork, log logging.Logger) MessageBus {
+func NewMessageBus(uow unit_of_work.PGUnitOfWork) MessageBus {
 	bus := &messageBus{
 		handledCommands: make(map[any]commandeventhandler.CommandHandler),
 		handledEvent:    make(map[any]commandeventhandler.EventHandler),
 		uow:             uow,
 		eventCh:         make(chan any, 100),
-		log:             log,
 	}
 
 	// start event handler
 	go func(mb *messageBus, evCh chan any) {
+		// TODO: Implement proper shutdown mechanism to close channel gracefully
+		defer close(evCh)
 		for event := range evCh {
 			go func(ev any) {
-
 				if err := mb.HandleEvent(context.Background(), ev); err != nil {
-					mb.log.Error(logging.Internal, logging.HandleEvent, "error whene handle event", map[logging.ExtraKey]interface{}{
-						logging.HandleEventExtraKey: err.Error(),
-					})
+					logging.Error("Failed to handle event").WithError(err).Log()
 				}
 			}(event)
 		}
-		defer close(evCh)
 	}(bus, bus.eventCh)
 
 	return bus
@@ -116,26 +112,70 @@ func (m *messageBus) AddEvent(handlers ...commandeventhandler.EventHandler) erro
 
 func (m *messageBus) Handle(ctx context.Context, cmd any) error {
 	cmdName := reflect.TypeOf(cmd).String()
+	
+	logging.Debug("Handling command").
+		WithString("command_name", cmdName).
+		Log()
+
 	if _, ok := m.handledCommands[cmdName]; !ok {
-		return DoesNotExistCommandHandlerError{cmdName}
+		err := DoesNotExistCommandHandlerError{cmdName}
+		logging.Error("Command handler not found").
+			WithString("command_name", cmdName).
+			WithError(err).
+			Log()
+		return err
 	}
 
 	err := m.handledCommands[cmdName].Handle(ctx, cmd)
 	if err != nil {
+		logging.Error("Command handler failed").
+			WithString("command_name", cmdName).
+			WithError(err).
+			Log()
 		return err
 	}
 
-	// collect new events
-	m.uow.CollectNewEvents(m.eventCh)
+	logging.Debug("Collecting domain events from transaction").
+		WithString("command_name", cmdName).
+		Log()
+
+	// collect new events from the transaction
+	m.uow.CollectNewEvents(ctx, m.eventCh)
+
+	logging.Debug("Command handled successfully").
+		WithString("command_name", cmdName).
+		Log()
 
 	return nil
 }
 
 func (m *messageBus) HandleEvent(ctx context.Context, event any) error {
 	eventName := reflect.TypeOf(event).String()
+	logging.Debug("Handling event").
+		WithString("event_name", eventName).
+		Log()
+	
 	if _, ok := m.handledEvent[eventName]; !ok {
-		return DoesNotExistEventHandlerError{reflect.TypeOf(eventName).String()}
+		err := DoesNotExistEventHandlerError{reflect.TypeOf(eventName).String()}
+		logging.Error("Event handler not found").
+			WithString("event_name", eventName).
+			WithError(err).
+			Log()
+		return err
 	}
 
-	return m.handledEvent[eventName].Handle(ctx, event)
+	err := m.handledEvent[eventName].Handle(ctx, event)
+	if err != nil {
+		logging.Error("Event handler failed").
+			WithString("event_name", eventName).
+			WithError(err).
+			Log()
+		return err
+	}
+
+	logging.Debug("Event handled successfully").
+		WithString("event_name", eventName).
+		Log()
+
+	return nil
 }

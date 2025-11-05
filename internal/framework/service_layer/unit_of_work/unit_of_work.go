@@ -1,81 +1,113 @@
 package unit_of_work
 
 import (
+	"context"
 	"sync"
+	"sync/atomic"
 
 	"gorm.io/gorm"
 
 	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/repository"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/adapter"
 	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
+	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/types"
 )
 
+// PGUnitOfWork extends the base UnitOfWork with PostgreSQL-specific functionality
 type PGUnitOfWork interface {
 	adapter.UnitOfWork
-	CollectNewEvents(eventCh chan<- any)
-	User() repository.UserRepository
-	Token() repository.TokenRepository
+	CollectNewEvents(ctx context.Context, eventCh chan<- any)
+	User(ctx context.Context) repository.UserRepository
 }
 
 type pgUnitOfWork struct {
 	adapter.UnitOfWork
-	log          logging.Logger
-	repositories []adapter.SeenedRepository
-
-	// repositories
-	user  repository.UserRepository
-	token repository.TokenRepository
+	db           *gorm.DB
+	repositories map[string]adapter.SeenedRepository
+	mu           sync.RWMutex
 }
 
-func New(db *gorm.DB, logInstans logging.Logger) PGUnitOfWork {
-	uow := &pgUnitOfWork{
-		UnitOfWork: adapter.NewBaseUnitOfWork(db),
-		log:        logInstans,
+// New creates a new PostgreSQL UnitOfWork instance
+func New(db *gorm.DB) PGUnitOfWork {
+	return &pgUnitOfWork{
+		UnitOfWork:  adapter.NewBaseUnitOfWork(db),
+		db:          db,
+		repositories: make(map[string]adapter.SeenedRepository),
+	}
+}
+
+// Do executes a function within a database transaction and collects events
+func (uow *pgUnitOfWork) Do(ctx context.Context, fc types.UowUseCase) error {
+	return uow.UnitOfWork.Do(ctx, fc)
+}
+
+// CollectNewEvents collects domain events from all repositories that were accessed
+// during the transaction. Events are sent to the provided channel.
+func (uow *pgUnitOfWork) CollectNewEvents(ctx context.Context, eventCh chan<- any) {
+	uow.mu.RLock()
+	repos := make([]adapter.SeenedRepository, 0, len(uow.repositories))
+	for _, repo := range uow.repositories {
+		repos = append(repos, repo)
+	}
+	uow.mu.RUnlock()
+
+	if len(repos) == 0 {
+		logging.Debug("No repositories accessed, no events to collect").Log()
+		return
 	}
 
-	return uow
-}
+	logging.Debug("Collecting domain events").
+		WithInt("repository_count", len(repos)).
+		Log()
 
-func (uow *pgUnitOfWork) CollectNewEvents(eventCh chan<- any) {
 	var wg sync.WaitGroup
-
-	for _, repo := range uow.repositories {
-		wg.Go(func() {
-			for _, entity := range repo.Seen() {
+	var eventCount int64
+	for _, repo := range repos {
+		wg.Add(1)
+		go func(r adapter.SeenedRepository) {
+			defer wg.Done()
+			for _, entity := range r.Seen() {
 				for _, event := range entity.Event() {
-					uow.log.Info(logging.Internal, logging.Event, "send event", map[logging.ExtraKey]interface{}{
-						logging.EventExtraKey: event,
-					})
-					eventCh <- event
+					select {
+					case eventCh <- event:
+						atomic.AddInt64(&eventCount, 1)
+						logging.Debug("Domain event collected and sent").Log()
+					case <-ctx.Done():
+						logging.Warn("Context cancelled while collecting events").
+							WithError(ctx.Err()).
+							Log()
+						return
+					}
 				}
 			}
-		})
+		}(repo)
 	}
 
 	wg.Wait()
-	if err := uow.Commit(); err != nil {
-		
-	}
-	uow.clearRepo()
+	
+	logging.Debug("Finished collecting domain events").
+		WithInt64("total_events", atomic.LoadInt64(&eventCount)).
+		Log()
+
+	uow.clearRepositories()
 }
 
-func (uow *pgUnitOfWork) clearRepo() {
-	uow.user = nil
+// clearRepositories clears all cached repositories after event collection
+func (uow *pgUnitOfWork) clearRepositories() {
+	uow.mu.Lock()
+	defer uow.mu.Unlock()
+	uow.repositories = make(map[string]adapter.SeenedRepository)
 }
 
-func (uow *pgUnitOfWork) User() repository.UserRepository {
-	if uow.user == nil {
-		uow.user = repository.NewUserRepository(uow.GetSession())
-		uow.repositories = append(uow.repositories, uow.user)
-	}
 
-	return uow.user
-}
+func (uow *pgUnitOfWork) User(ctx context.Context) repository.UserRepository {
+	session := uow.UnitOfWork.GetSession(ctx)
+	userRepo := repository.NewUserRepository(session)
+	uow.mu.Lock()
+	defer uow.mu.Unlock()
+	
+	key := "user"
+	uow.repositories[key] = userRepo
 
-func (uow *pgUnitOfWork) Token() repository.TokenRepository {
-	if uow.token == nil {
-		uow.token = repository.NewTokenRepository(uow.GetSession())
-	}
-
-	return uow.token
+	return userRepo
 }
