@@ -1,8 +1,9 @@
 package entryporint
 
 import (
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/entryporint/handler"
-	"github.com/gofiber/fiber/v2"
+	"shikposh-backend/internal/account/entryporint/handler"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 type UserManagementRouter struct {

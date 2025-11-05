@@ -7,7 +7,8 @@ import (
 	"errors"
 	"log"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/migrations"
+	"shikposh-backend/internal/account/adapter/migrations"
+
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/spf13/cobra"

@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/command.LoginUser"
+                            "$ref": "#/definitions/commands.LoginUser"
                         }
                     }
                 ],
@@ -143,7 +143,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/command.RegisterUser"
+                            "$ref": "#/definitions/commands.RegisterUser"
                         }
                     }
                 ],
@@ -177,7 +177,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "command.LoginUser": {
+        "commands.LoginUser": {
             "type": "object",
             "required": [
                 "password",
@@ -185,16 +185,14 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "type": "string",
-                    "minLength": 3
+                    "type": "string"
                 },
                 "user_name": {
-                    "type": "string",
-                    "minLength": 3
+                    "type": "string"
                 }
             }
         },
-        "command.RegisterUser": {
+        "commands.RegisterUser": {
             "type": "object",
             "required": [
                 "avatar_identifier",

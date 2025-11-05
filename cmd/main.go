@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/ali-mahdavi-dev/bunny-go/cmd/commands"
+	"shikposh-backend/cmd/commands"
 )
 
 func main() {

@@ -3,9 +3,10 @@ package middleware
 import (
 	"errors"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
-	"github.com/gofiber/fiber/v2"
+	"shikposh-backend/config"
+	"shikposh-backend/internal/framework/service_layer/unit_of_work"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 var errFailGetTokenFromDB = errors.New("fail to get token from DB")

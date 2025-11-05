@@ -3,8 +3,9 @@ package websocket
 import (
 	"fmt"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
+	"shikposh-backend/config"
+	"shikposh-backend/pkg/framework/infrastructure/logging"
+
 	"github.com/golang-jwt/jwt/v5"
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/spf13/cast"
@@ -33,10 +34,10 @@ func (w *Websocket) AddWsRoutes() {
 			u := s.URL()
 			token = u.Query().Get("token")
 		}
-		w.logger.Info(logging.WS, logging.WSOnConnect, "New connection", map[logging.ExtraKey]interface{}{
-			logging.WSSocketID: s.ID(),
-			logging.WSToken:    token,
-		})
+		logging.Info("WebSocket connection established").
+			WithString("socket_id", s.ID()).
+			WithString("token", token).
+			Log()
 
 		if token == "" {
 			s.Emit("error", "Missing token")

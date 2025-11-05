@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/entity"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/adapter"
+	"shikposh-backend/internal/account/domain/entity"
+	"shikposh-backend/pkg/framework/adapter"
+
 	"gorm.io/gorm"
 )
 

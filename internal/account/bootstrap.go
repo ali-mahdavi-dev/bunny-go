@@ -1,20 +1,20 @@
 package account
 
 import (
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"shikposh-backend/config"
+	"shikposh-backend/internal/account/adapter"
+	"shikposh-backend/internal/account/entryporint/handler"
+	"shikposh-backend/internal/account/service_layer/command_handler"
+	"shikposh-backend/internal/framework/service_layer/unit_of_work"
+	"shikposh-backend/pkg/framework/infrastructure/logging"
+	commandeventhandler "shikposh-backend/pkg/framework/service_layer/command_event_handler"
+	"shikposh-backend/pkg/framework/service_layer/messagebus"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/endpoint"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/endpoint/controller"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/handler"
-	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
+	"github.com/gofiber/fiber/v3"
+	"gorm.io/gorm"
 )
 
-func Bootstrap(router *gin.Engine, db *gorm.DB) error {
+func Bootstrap(router fiber.Router, db *gorm.DB, cfg *config.Config, logger logging.Logger) error {
 	logging.Info("Initializing account module").Log()
 
 	logging.Debug("Creating unit of work").Log()
@@ -24,28 +24,27 @@ func Bootstrap(router *gin.Engine, db *gorm.DB) error {
 	bus := messagebus.NewMessageBus(uow)
 
 	logging.Debug("Initializing avatar generator").Log()
-	ag, err := adapter.NewAvatarGenerator()
+	ag, err := adapter.NewAvatarGenerator(AssetsFS)
 	if err != nil {
-		logging.Error("Failed to initialize avatar generator").
-			WithError(err).
-			Log()
+		logging.Error("Failed to initialize avatar generator").WithError(err).Log()
 		return err
 	}
 
-	logging.Debug("Creating user controller").Log()
-	userController := controller.NewUserController(bus, ag)
-
 	logging.Debug("Creating user handler").Log()
-	userHandler := handler.NewUserHandler(uow)
+	userHandler := command_handler.NewUserHandler(uow, cfg)
+
+	logging.Debug("Creating user controller").Log()
+	userController := handler.NewUserController(bus, ag, userHandler)
 
 	logging.Debug("Registering routes").Log()
-	endpoint.NewUserManagementRouter(router, endpoint.UserManagementRouter{
-		User: userController,
-	})
+	userController.RegisterRoutes(router)
 
 	logging.Debug("Registering command and event handlers").Log()
 	bus.AddHandler(
-		commandeventhandler.NewCommandHandler(userHandler.Register),
+		commandeventhandler.NewCommandHandler(userHandler.RegisterHandler),
+	)
+	bus.AddHandler(
+		commandeventhandler.NewCommandHandler(userHandler.LogoutHandler),
 	)
 	bus.AddHandlerEvent(
 		commandeventhandler.NewEventHandler(userHandler.RegisterEvent),

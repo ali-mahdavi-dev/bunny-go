@@ -1,6 +1,6 @@
 package httputils
 
-import "github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
+import "shikposh-backend/pkg/framework/cerrors"
 
 type Direction string
 
@@ -38,8 +38,11 @@ func (a OrderByParams) ToSQL() string {
 	}
 
 	var sql string
-	for _, v := range a {
-		sql += v.Field + " " + string(v.Direction) + ","
+	for i, v := range a {
+		if i > 0 {
+			sql += ", "
+		}
+		sql += v.Field + " " + string(v.Direction)
 	}
-	return sql[:len(sql)-1]
+	return sql
 }

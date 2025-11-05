@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	config "github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
+	config "shikposh-backend/config"
+	"shikposh-backend/pkg/framework/infrastructure/logging"
 )
 
 var (
@@ -23,7 +23,16 @@ var (
 
 func initializeConfigs() {
 	cfg = *config.GetConfig()
-	LogInstans = logging.NewLogger(&cfg)
+	loggerConfig := logging.LoggerConfig{
+		Type:   logging.LoggerTypeZerolog,
+		Level:  logging.LogLevel(cfg.Logger.Level),
+		Format: logging.LogFormatJSON,
+	}
+	var err error
+	LogInstans, err = logging.NewLogger(loggerConfig)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func init() {
@@ -38,9 +47,7 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		// Logger might not be initialized, check if available
 		if logging.GetLogger() != nil {
-			logging.Error("Command execution failed").
-				WithError(err).
-				Log()
+			logging.Error("Command execution failed").WithError(err).Log()
 		}
 		os.Exit(1)
 	}

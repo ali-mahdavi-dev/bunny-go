@@ -1,17 +1,15 @@
 definitions:
-  command.LoginUser:
+  commands.LoginUser:
     properties:
       password:
-        minLength: 3
         type: string
       user_name:
-        minLength: 3
         type: string
     required:
     - password
     - user_name
     type: object
-  command.RegisterUser:
+  commands.RegisterUser:
     properties:
       avatar_identifier:
         type: string
@@ -65,7 +63,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/command.LoginUser'
+          $ref: '#/definitions/commands.LoginUser'
       produces:
       - application/json
       responses:
@@ -137,7 +135,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/command.RegisterUser'
+          $ref: '#/definitions/commands.RegisterUser'
       produces:
       - application/json
       responses:

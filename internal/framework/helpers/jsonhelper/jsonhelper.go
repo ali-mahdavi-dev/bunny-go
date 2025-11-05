@@ -3,18 +3,33 @@ package jsonhelper
 import (
 	"encoding/json"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
+	"shikposh-backend/config"
+	"shikposh-backend/pkg/framework/infrastructure/logging"
 )
 
-var loggging = logging.NewLogger(config.GetConfig())
+var loggging logging.Logger
+
+func init() {
+	cfg := config.GetConfig()
+	loggerConfig := logging.LoggerConfig{
+		Type:   logging.LoggerTypeZerolog,
+		Level:  logging.LogLevel(cfg.Logger.Level),
+		Format: logging.LogFormatJSON,
+	}
+	var err error
+	loggging, err = logging.NewLogger(loggerConfig)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func Encode[T any](t T) []byte {
 	b, err := json.Marshal(t)
 	if err != nil {
-		loggging.Error(logging.IO, logging.CanNotMarshal, "couldn't encode the variable", map[logging.ExtraKey]interface{}{
-			logging.JsonMarshalKey: t,
-		})
+		logging.Error("JSON encoding failed").
+			WithString("operation", "encode").
+			WithAny("variable", t).
+			Log()
 	}
 	return b
 }
@@ -23,10 +38,11 @@ func Decode[T any](b []byte) T {
 	var t T
 	err := json.Unmarshal(b, &t)
 	if err != nil {
-		loggging.Error(logging.IO, logging.CanNotMarshal, "couldn't decode the variable", map[logging.ExtraKey]interface{}{
-			logging.JsonMarshalKey:   t,
-			logging.JsonMarshalValue: b,
-		})
+		logging.Error("JSON decoding failed").
+			WithString("operation", "decode").
+			WithAny("variable", t).
+			WithAny("bytes", b).
+			Log()
 	}
 	return t
 }

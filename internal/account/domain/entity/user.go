@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/adapter"
+	"shikposh-backend/pkg/framework/adapter"
 )
 
 type User struct {

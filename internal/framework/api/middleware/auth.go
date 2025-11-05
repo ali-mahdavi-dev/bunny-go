@@ -4,14 +4,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ali-mahdavi-dev/bunny-go/pkg/httputils"
-	"github.com/gofiber/fiber/v2"
+	"shikposh-backend/pkg/httputils"
+
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/spf13/cast"
 )
 
 func (m *Middleware) AuthMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// Get token from Authorization header
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -40,7 +41,8 @@ func (m *Middleware) AuthMiddleware() fiber.Handler {
 		// Extract claims and validate token from DB
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			userID := cast.ToUint64(claims["user_id"])
-			user, err := m.Uow.Token().FindByUserID(c.UserContext(), userID)
+			ctx := c.Context()
+			user, err := m.Uow.Token(ctx).FindByUserID(ctx, userID)
 			if err != nil {
 				return httputils.ResError(c, errFailGetTokenFromDB)
 			}

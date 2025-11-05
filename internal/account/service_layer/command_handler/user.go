@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/repository"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/command"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/entity"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/events"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/api/jwt"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors/phrases"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
+	"shikposh-backend/config"
+	"shikposh-backend/internal/account/adapter/repository"
+	"shikposh-backend/internal/account/domain/commands"
+	"shikposh-backend/internal/account/domain/entity"
+	"shikposh-backend/internal/account/domain/events"
+	"shikposh-backend/pkg/framework/api/jwt"
+	"shikposh-backend/pkg/framework/cerrors"
+	"shikposh-backend/pkg/framework/cerrors/phrases"
+	"shikposh-backend/internal/framework/service_layer/unit_of_work"
 )
 
 type UserHandler struct {
@@ -25,9 +25,9 @@ func NewUserHandler(uow unit_of_work.PGUnitOfWork, cfg *config.Config) *UserHand
 	return &UserHandler{uow: uow, cfg: cfg}
 }
 
-func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *command.RegisterUser) error {
+func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *commands.RegisterUser) error {
 	return h.uow.Do(ctx, func(ctx context.Context) error {
-		_, err := h.uow.User().FindByUserName(ctx, cmd.UserName)
+		_, err := h.uow.User(ctx).FindByUserName(ctx, cmd.UserName)
 		if err != nil {
 			if err != repository.ErrUserNotFound {
 				return fmt.Errorf("UserHandler.Register error checking existing username: %w", err)
@@ -36,7 +36,7 @@ func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *command.Register
 			return cerrors.BadRequest(phrases.UserAlreadyExists)
 		}
 
-		err = h.uow.User().Save(ctx, entity.NewUser(
+		err = h.uow.User(ctx).Save(ctx, entity.NewUser(
 			cmd.AvatarIdentifier,
 			cmd.UserName,
 			cmd.FirstName,
@@ -52,8 +52,8 @@ func (h *UserHandler) RegisterHandler(ctx context.Context, cmd *command.Register
 	})
 }
 
-func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *command.Logout) error {
-	token, err := h.uow.Token().FindByUserID(ctx, cmd.UserID)
+func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *commands.Logout) error {
+	token, err := h.uow.Token(ctx).FindByUserID(ctx, cmd.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrTokenNotFound) {
 			return cerrors.NotFound(phrases.UserNotFound)
@@ -62,17 +62,17 @@ func (h *UserHandler) LogoutHandler(ctx context.Context, cmd *command.Logout) er
 		return fmt.Errorf("UserHandler.LogoutHandler failed to get token by userID: %w", err)
 	}
 
-	if err := h.uow.Token().Remove(ctx, token, false); err != nil {
-		return fmt.Errorf("UserHandler.LoginUseCase failed to remove existing token: %w", err)
+	if err := h.uow.Token(ctx).Remove(ctx, token, false); err != nil {
+		return fmt.Errorf("UserHandler.LogoutHandler failed to remove existing token: %w", err)
 	}
 
 	return nil
 }
 
-func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *command.LoginUser) (string, error) {
+func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *commands.LoginUser) (string, error) {
 	var accessToken string
 	err := h.uow.Do(ctx, func(ctx context.Context) error {
-		user, err := h.uow.User().FindByUserName(ctx, cmd.UserName)
+		user, err := h.uow.User(ctx).FindByUserName(ctx, cmd.UserName)
 		if err != nil {
 			if errors.Is(err, repository.ErrUserNotFound) {
 				return cerrors.NotFound(phrases.UserNotFound)
@@ -80,13 +80,13 @@ func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *command.LoginUser) 
 
 			return fmt.Errorf("UserHandler.LoginUseCase fail get user by username: %w", err)
 		}
-		token, err := h.uow.Token().FindByUserID(ctx, user.ID)
+		token, err := h.uow.Token(ctx).FindByUserID(ctx, user.ID)
 		if err != nil && !errors.Is(err, repository.ErrTokenNotFound) {
 			return fmt.Errorf("UserHandler.LoginUseCase failed to get token by userID: %w", err)
 		}
 
 		if token != nil {
-			if err := h.uow.Token().Remove(ctx, token, false); err != nil {
+			if err := h.uow.Token(ctx).Remove(ctx, token, false); err != nil {
 				return fmt.Errorf("UserHandler.LoginUseCase failed to remove existing token: %w", err)
 			}
 		}
@@ -96,7 +96,7 @@ func (h *UserHandler) LoginUseCase(ctx context.Context, cmd *command.LoginUser) 
 			return fmt.Errorf("UserHandler.LoginUseCase fail generate token: %w", err)
 		}
 
-		err = h.uow.Token().Save(ctx, entity.NewToken(accessToken, user.ID))
+		err = h.uow.Token(ctx).Save(ctx, entity.NewToken(accessToken, user.ID))
 		if err != nil {
 			return fmt.Errorf("UserHandler.LoginUseCase fail save token to db: %w", err)
 		}

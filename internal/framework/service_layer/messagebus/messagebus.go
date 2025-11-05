@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
-	commandeventhandler "github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/command_event_handler"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
+	"shikposh-backend/pkg/framework/infrastructure/logging"
+	commandeventhandler "shikposh-backend/pkg/framework/service_layer/command_event_handler"
+	"shikposh-backend/internal/framework/service_layer/unit_of_work"
 )
 
 // DuplicateCommandHandlerError occurs when a handler with the same name already exists.
@@ -40,7 +40,7 @@ func (d DoesNotExistEventHandlerError) Error() string {
 type MessageBus interface {
 	AddHandler(handlers ...commandeventhandler.CommandHandler) error
 	AddHandlerEvent(handlers ...commandeventhandler.EventHandler) error
-	 Handle(ctx context.Context, cmd any) error
+	Handle(ctx context.Context, cmd any) error
 }
 
 type messageBus struct {
@@ -112,7 +112,7 @@ func (m *messageBus) AddEvent(handlers ...commandeventhandler.EventHandler) erro
 
 func (m *messageBus) Handle(ctx context.Context, cmd any) error {
 	cmdName := reflect.TypeOf(cmd).String()
-	
+
 	logging.Debug("Handling command").
 		WithString("command_name", cmdName).
 		Log()
@@ -154,7 +154,7 @@ func (m *messageBus) HandleEvent(ctx context.Context, event any) error {
 	logging.Debug("Handling event").
 		WithString("event_name", eventName).
 		Log()
-	
+
 	if _, ok := m.handledEvent[eventName]; !ok {
 		err := DoesNotExistEventHandlerError{reflect.TypeOf(eventName).String()}
 		logging.Error("Event handler not found").

@@ -6,13 +6,14 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
-	"github.com/gofiber/fiber/v2"
+	"shikposh-backend/pkg/framework/cerrors"
+
+	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/cast"
 )
 
 // Token
-func GetToken(c *fiber.Ctx) string {
+func GetToken(c fiber.Ctx) string {
 	auth := c.Get("Authorization")
 	prefix := "Bearer "
 	token := ""
@@ -31,22 +32,22 @@ func GetToken(c *fiber.Ctx) string {
 }
 
 // Parsing
-func ParseJSON(c *fiber.Ctx, obj interface{}) error {
-	if err := c.BodyParser(obj); err != nil {
+func ParseJSON(c fiber.Ctx, obj interface{}) error {
+	if err := c.Bind().Body(obj); err != nil {
 		return cerrors.BadRequest("FailedParseJson", err.Error())
 	}
 	return nil
 }
 
-func ParseQuery(c *fiber.Ctx, obj interface{}) error {
-	if err := c.QueryParser(obj); err != nil {
+func ParseQuery(c fiber.Ctx, obj interface{}) error {
+	if err := c.Bind().Query(obj); err != nil {
 		return cerrors.BadRequest("FailedParseQuery", err.Error())
 	}
 	return nil
 }
 
-func ParsePaginationQueryParam(c *fiber.Ctx, obj *PaginationResult) error {
-	if err := c.QueryParser(obj); err != nil {
+func ParsePaginationQueryParam(c fiber.Ctx, obj *PaginationResult) error {
+	if err := c.Bind().Query(obj); err != nil {
 		return cerrors.BadRequest("FailedParseQuery", err.Error())
 	}
 	if obj.Limit < 1 {
@@ -55,15 +56,15 @@ func ParsePaginationQueryParam(c *fiber.Ctx, obj *PaginationResult) error {
 	return nil
 }
 
-func ParseForm(c *fiber.Ctx, obj interface{}) error {
-	if err := c.BodyParser(obj); err != nil {
+func ParseForm(c fiber.Ctx, obj interface{}) error {
+	if err := c.Bind().Body(obj); err != nil {
 		return cerrors.BadRequest("FailedParseForm", err.Error())
 	}
 	return nil
 }
 
 // Responses
-func ResJSON(c *fiber.Ctx, status int, v interface{}) error {
+func ResJSON(c fiber.Ctx, status int, v interface{}) error {
 	buf, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -74,26 +75,29 @@ func ResJSON(c *fiber.Ctx, status int, v interface{}) error {
 	return c.Send(buf)
 }
 
-func ResSuccess(c *fiber.Ctx, v interface{}) error {
+func ResSuccess(c fiber.Ctx, v interface{}) error {
 	return ResJSON(c, fiber.StatusOK, ResponseResult{
 		Success: true,
 		Data:    v,
 	})
 }
 
-func ResOK(c *fiber.Ctx) error {
+func ResOK(c fiber.Ctx) error {
 	return ResJSON(c, fiber.StatusOK, ResponseResult{
 		Success: true,
 	})
 }
 
 func CalculatePagination(total, limit, skip int64) (int64, int64) {
+	if limit <= 0 {
+		limit = 1 // Prevent division by zero
+	}
 	pages := int64(math.Ceil(float64(total) / float64(limit)))
 	page := (skip / limit) + 1
 	return pages, page
 }
 
-func ResPage(c *fiber.Ctx, v interface{}, pr *PaginationResult) error {
+func ResPage(c fiber.Ctx, v interface{}, pr *PaginationResult) error {
 	var total, pages, page int64
 	if pr != nil {
 		total = pr.Total
@@ -123,7 +127,7 @@ func ResPage(c *fiber.Ctx, v interface{}, pr *PaginationResult) error {
 	})
 }
 
-func ResError(c *fiber.Ctx, err error) error {
+func ResError(c fiber.Ctx, err error) error {
 	var ierr cerrors.Error
 	if e, ok := err.(cerrors.Error); ok {
 		ierr = e

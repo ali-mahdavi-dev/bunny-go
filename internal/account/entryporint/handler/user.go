@@ -4,14 +4,15 @@ import (
 	"image/png"
 	"net/http"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/domain/command"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/service_layer/command_handler"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/cerrors/phrases"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/messagebus"
-	"github.com/ali-mahdavi-dev/bunny-go/pkg/httputils"
-	"github.com/gofiber/fiber/v2"
+	"shikposh-backend/internal/account/adapter"
+	"shikposh-backend/internal/account/domain/commands"
+	"shikposh-backend/internal/account/service_layer/command_handler"
+	"shikposh-backend/pkg/framework/cerrors"
+	"shikposh-backend/pkg/framework/cerrors/phrases"
+	"shikposh-backend/pkg/framework/service_layer/messagebus"
+	"shikposh-backend/pkg/httputils"
+
+	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/cast"
 )
 
@@ -39,7 +40,7 @@ func (u *UserController) RegisterRoutes(r fiber.Router) {
 	}
 }
 
-func (u *UserController) GenerateAvatarHandler(c *fiber.Ctx) error {
+func (u *UserController) GenerateAvatarHandler(c fiber.Ctx) error {
 	identifier := c.Params("id")
 
 	img, err := u.ag.Generate(identifier)
@@ -69,15 +70,15 @@ func (u *UserController) GenerateAvatarHandler(c *fiber.Ctx) error {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		command.RegisterUser	true	"RegisterUser"
-//	@Success		200		{object}	httputils.ResponseResult		"Registration successful"
-//	@Failure		400		{object}	httputils.ResponseResult		"Invalid request body or unknown provider"
-//	@Failure		422		{object}	httputils.ResponseResult		"Unprocessable input (validation failed)"
-//	@Failure		500		{object}	httputils.ResponseResult		"Internal server error"
+//	@Param			request	body		commands.RegisterUser		true	"RegisterUser"
+//	@Success		200		{object}	httputils.ResponseResult	"Registration successful"
+//	@Failure		400		{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
+//	@Failure		422		{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
+//	@Failure		500		{object}	httputils.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/register [post]
-func (u *UserController) Register(c *fiber.Ctx) error {
-	ctx := c.UserContext()
-	cmd := new(command.RegisterUser)
+func (u *UserController) Register(c fiber.Ctx) error {
+	ctx := c.Context()
+	cmd := new(commands.RegisterUser)
 
 	if err := httputils.ParseJSON(c, cmd); err != nil {
 		return httputils.ResError(c, err)
@@ -97,16 +98,16 @@ func (u *UserController) Register(c *fiber.Ctx) error {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		command.LoginUser	true	"LoginUser"
-//	@Success		200		{object}	map[string]string	"Access token"
+//	@Param			request	body		commands.LoginUser			true	"LoginUser"
+//	@Success		200		{object}	map[string]string			"Access token"
 //	@Failure		400		{object}	httputils.ResponseResult	"Invalid request body or unknown provider"
 //	@Failure		401		{object}	httputils.ResponseResult	"Authentication failed"
 //	@Failure		422		{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
 //	@Failure		500		{object}	httputils.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/login [post]
-func (u *UserController) Login(c *fiber.Ctx) error {
-	ctx := c.UserContext()
-	cmd := new(command.LoginUser)
+func (u *UserController) Login(c fiber.Ctx) error {
+	ctx := c.Context()
+	cmd := new(commands.LoginUser)
 
 	if err := httputils.ParseJSON(c, cmd); err != nil {
 		return httputils.ResError(c, err)
@@ -135,15 +136,15 @@ func (u *UserController) Login(c *fiber.Ctx) error {
 //	@Failure		422	{object}	httputils.ResponseResult	"Unprocessable input (validation failed)"
 //	@Failure		500	{object}	httputils.ResponseResult	"Internal server error"
 //	@Router			/api/v1/public/logout [post]
-func (u *UserController) Logout(c *fiber.Ctx) error {
-	ctx := c.UserContext()
+func (u *UserController) Logout(c fiber.Ctx) error {
+	ctx := c.Context()
 
 	userID := c.Get("user_id")
 	if userID == "" {
 		return httputils.ResError(c, cerrors.NotFound(phrases.UserNotFound))
 	}
 
-	cmd := new(command.Logout)
+	cmd := new(commands.Logout)
 	cmd.UserID = cast.ToUint64(userID)
 
 	if err := u.bus.Handle(ctx, cmd); err != nil {

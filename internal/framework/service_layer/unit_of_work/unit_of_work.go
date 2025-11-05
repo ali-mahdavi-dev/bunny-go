@@ -7,10 +7,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account/adapter/repository"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/adapter"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/logging"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/types"
+	"shikposh-backend/internal/account/adapter/repository"
+	"shikposh-backend/pkg/framework/adapter"
+	"shikposh-backend/pkg/framework/infrastructure/logging"
+	"shikposh-backend/pkg/framework/service_layer/types"
 )
 
 // PGUnitOfWork extends the base UnitOfWork with PostgreSQL-specific functionality
@@ -18,6 +18,7 @@ type PGUnitOfWork interface {
 	adapter.UnitOfWork
 	CollectNewEvents(ctx context.Context, eventCh chan<- any)
 	User(ctx context.Context) repository.UserRepository
+	Token(ctx context.Context) repository.TokenRepository
 }
 
 type pgUnitOfWork struct {
@@ -30,8 +31,8 @@ type pgUnitOfWork struct {
 // New creates a new PostgreSQL UnitOfWork instance
 func New(db *gorm.DB) PGUnitOfWork {
 	return &pgUnitOfWork{
-		UnitOfWork:  adapter.NewBaseUnitOfWork(db),
-		db:          db,
+		UnitOfWork:   adapter.NewBaseUnitOfWork(db),
+		db:           db,
 		repositories: make(map[string]adapter.SeenedRepository),
 	}
 }
@@ -84,7 +85,7 @@ func (uow *pgUnitOfWork) CollectNewEvents(ctx context.Context, eventCh chan<- an
 	}
 
 	wg.Wait()
-	
+
 	logging.Debug("Finished collecting domain events").
 		WithInt64("total_events", atomic.LoadInt64(&eventCount)).
 		Log()
@@ -99,15 +100,26 @@ func (uow *pgUnitOfWork) clearRepositories() {
 	uow.repositories = make(map[string]adapter.SeenedRepository)
 }
 
-
 func (uow *pgUnitOfWork) User(ctx context.Context) repository.UserRepository {
 	session := uow.UnitOfWork.GetSession(ctx)
 	userRepo := repository.NewUserRepository(session)
 	uow.mu.Lock()
 	defer uow.mu.Unlock()
-	
+
 	key := "user"
 	uow.repositories[key] = userRepo
 
 	return userRepo
+}
+
+func (uow *pgUnitOfWork) Token(ctx context.Context) repository.TokenRepository {
+	session := uow.UnitOfWork.GetSession(ctx)
+	tokenRepo := repository.NewTokenRepository(session)
+	uow.mu.Lock()
+	defer uow.mu.Unlock()
+
+	key := "token"
+	uow.repositories[key] = tokenRepo
+
+	return tokenRepo
 }

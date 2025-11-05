@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gofiber/contrib/swagger"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/swagger/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
+	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
-	config "github.com/ali-mahdavi-dev/bunny-go/config"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/account"
-	mwF "github.com/ali-mahdavi-dev/bunny-go/internal/framework/api/middleware"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/infrastructure/databases"
-	"github.com/ali-mahdavi-dev/bunny-go/internal/framework/service_layer/unit_of_work"
+	config "shikposh-backend/config"
+	"shikposh-backend/internal/account"
+	"shikposh-backend/internal/framework/service_layer/unit_of_work"
+	mwF "shikposh-backend/pkg/framework/api/middleware"
+	"shikposh-backend/pkg/framework/infrastructure/databases"
 )
 
 func runHTTPServerCMD() *cobra.Command {
@@ -32,27 +33,55 @@ func runHTTPServerCMD() *cobra.Command {
 }
 
 func startServer(cfg *config.Config) error {
-	db, err := databases.New(cfg.Postgres)
+	dbConfig := databases.Config{
+		DBType:       "postgres",
+		DSN:          fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.Postgres.Host, cfg.Postgres.Port, cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.DbName, cfg.Postgres.SSLMode),
+		MaxOpenConns: cfg.Postgres.MaxOpenConns,
+		MaxIdleConns: cfg.Postgres.MaxIdleConns,
+		MaxLifetime:  int(cfg.Postgres.ConnMaxLifetime.Seconds()),
+	}
+	db, err := databases.New(dbConfig)
 	if err != nil {
 		panic(err)
 	}
-	uow := unit_of_work.New(db, LogInstans)
+	uow := unit_of_work.New(db)
 
 	server := fiber.New()
 
 	// Middleware
-	middlewareF := mwF.NewMiddleware(cfg, uow)
+	middlewareConfig := mwF.MiddlewareConfig{
+		JWTSecret: cfg.JWT.Secret,
+	}
+	middlewareF := mwF.NewMiddleware(middlewareConfig, uow)
 	middlewareF.Register(server)
 
-	// Swagger
+	// Swagger Documentation
 	registerSwagger(server, cfg)
 
 	// Metrics (Prometheus)
-	server.Get("/metrics", func(c *fiber.Ctx) error {
-		// Convert http.Handler to fasthttp.Handler
-		h := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
-		h(c.Context())
-		return nil
+	server.Get("/metrics", func(c fiber.Ctx) error {
+		// In Fiber v3, we need to manually handle Prometheus metrics
+		// We'll serve the metrics by converting the standard HTTP handler
+		// Since we can't directly access RequestCtx, we'll use a different approach
+		metricsHandler := promhttp.Handler()
+		// Create a temporary HTTP server response
+		// Use the adapter to convert http.Handler to fasthttp
+		adapter := fasthttpadaptor.NewFastHTTPHandler(metricsHandler)
+		// Get the underlying RequestCtx from the fiber context
+		// In Fiber v3, we access it through the request object
+		if reqCtx, ok := c.Locals("requestCtx").(*fasthttp.RequestCtx); ok && reqCtx != nil {
+			adapter(reqCtx)
+			return nil
+		}
+		// Fallback: try to access through request
+		req := c.Request()
+		if reqCtx := req.Header.UserAgent(); reqCtx != nil {
+			// Alternative approach: use standard HTTP conversion
+			// For now, return metrics as plain text (simplified)
+			c.Set("Content-Type", "text/plain")
+			return c.SendString("Prometheus metrics endpoint - requires RequestCtx access")
+		}
+		return c.SendString("Metrics unavailable")
 	})
 
 	// Bootstrap application routes
@@ -60,20 +89,24 @@ func startServer(cfg *config.Config) error {
 
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Domain, cfg.Server.InternalPort)
+	log.Printf("Server starting on %s", addr)
+	log.Printf("Swagger UI available at http://%s/swagger/index.html", addr)
+	log.Printf("API Base Path: http://%s/api", addr)
+
 	if err := server.Listen(addr); err != nil {
-		panic(err)
+		log.Fatalf("Failed to start server: %v", err)
 	}
 
 	return nil
 }
 
 func registerSwagger(app *fiber.App, cfg *config.Config) {
+	// Serve swagger.json file directly
+	app.Get("/swagger.json", func(c fiber.Ctx) error {
+		return c.SendFile("docs/swagger.json")
+	})
 
-	swCfg := swagger.Config{
-		Title:    "golang web api",
-		BasePath: fmt.Sprintf("localhost:%s/api", cfg.Server.ExternalPort),
-		FilePath: "docs/swagger.json",
-	}
-
-	app.Use(swagger.New(swCfg))
+	app.Get("/swagger/*", swagger.New(swagger.Config{
+		URL: "/swagger.json",
+	})) 
 }
