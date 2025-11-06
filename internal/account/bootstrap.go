@@ -5,6 +5,7 @@ import (
 	"shikposh-backend/internal/account/adapter"
 	"shikposh-backend/internal/account/entryporint/handler"
 	"shikposh-backend/internal/account/service_layer/command_handler"
+	"shikposh-backend/internal/account/service_layer/event_handler"
 	"shikposh-backend/pkg/framework/infrastructure/logging"
 	commandeventhandler "shikposh-backend/pkg/framework/service_layer/command_event_handler"
 	"shikposh-backend/pkg/framework/service_layer/messagebus"
@@ -14,14 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func Bootstrap(router fiber.Router, db *gorm.DB, cfg *config.Config, logger logging.Logger) error {
+func Bootstrap(router fiber.Router, db *gorm.DB, cfg *config.Config, logger logging.Logger, bus messagebus.MessageBus) error {
 	logging.Info("Initializing account module").Log()
 
 	logging.Debug("Creating unit of work").Log()
 	uow := unit_of_work.New(db)
-
-	logging.Debug("Creating message bus").Log()
-	bus := messagebus.NewMessageBus(uow)
 
 	logging.Debug("Initializing avatar generator").Log()
 	ag, err := adapter.NewAvatarGenerator(AssetsFS)
@@ -30,22 +28,24 @@ func Bootstrap(router fiber.Router, db *gorm.DB, cfg *config.Config, logger logg
 		return err
 	}
 
-	logging.Debug("Creating user handler").Log()
+	logging.Debug("Creating handler").Log()
 	userHandler := command_handler.NewUserHandler(uow, cfg)
 
-	logging.Debug("Creating user controller").Log()
-	userController := handler.NewUserController(bus, ag, userHandler)
+	logging.Debug("Creating event handler").Log()
+	userEventHandler := event_handler.NewUserEventHandler(uow)
 
-	logging.Debug("Registering routes").Log()
+	logging.Debug("Creating controller").Log()
+	userController := handler.NewUserController(bus, ag)
 	userController.RegisterRoutes(router)
 
 	logging.Debug("Registering command and event handlers").Log()
 	bus.AddHandler(
 		commandeventhandler.NewCommandHandlerWithResult(userHandler.RegisterHandler),
+		commandeventhandler.NewCommandHandlerWithResult(userHandler.LoginHandler),
 		commandeventhandler.NewCommandHandler(userHandler.LogoutHandler),
 	)
 	bus.AddHandlerEvent(
-		commandeventhandler.NewEventHandler(userHandler.RegisterEvent),
+		commandeventhandler.NewEventHandler(userEventHandler.RegisterEvent),
 	)
 
 	logging.Info("Account module bootstrapped successfully").Log()

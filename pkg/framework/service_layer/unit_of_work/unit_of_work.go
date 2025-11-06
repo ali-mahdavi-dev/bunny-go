@@ -13,12 +13,13 @@ import (
 	"shikposh-backend/pkg/framework/service_layer/types"
 )
 
-// PGUnitOfWork extends the base UnitOfWork with PostgreSQL-specific functionality
+// PGUnitOfWork extends the base UnitOfWork with PostgreSQL-specific functionality.
 type PGUnitOfWork interface {
 	adapter.UnitOfWork
 	CollectNewEvents(ctx context.Context, eventCh chan<- any)
 	User(ctx context.Context) repository.UserRepository
 	Token(ctx context.Context) repository.TokenRepository
+	Profile(ctx context.Context) repository.ProfileRepository
 }
 
 type pgUnitOfWork struct {
@@ -28,7 +29,7 @@ type pgUnitOfWork struct {
 	mu           sync.RWMutex
 }
 
-// New creates a new PostgreSQL UnitOfWork instance
+// New creates a new PostgreSQL UnitOfWork instance.
 func New(db *gorm.DB) PGUnitOfWork {
 	return &pgUnitOfWork{
 		UnitOfWork:   adapter.NewBaseUnitOfWork(db),
@@ -37,13 +38,12 @@ func New(db *gorm.DB) PGUnitOfWork {
 	}
 }
 
-// Do executes a function within a database transaction and collects events
+// Do executes a function within a database transaction.
 func (uow *pgUnitOfWork) Do(ctx context.Context, fc types.UowUseCase) error {
 	return uow.UnitOfWork.Do(ctx, fc)
 }
 
-// CollectNewEvents collects domain events from all repositories that were accessed
-// during the transaction. Events are sent to the provided channel.
+// CollectNewEvents collects domain events from repositories and sends them to the channel.
 func (uow *pgUnitOfWork) CollectNewEvents(ctx context.Context, eventCh chan<- any) {
 	uow.mu.RLock()
 	repos := make([]adapter.SeenedRepository, 0, len(uow.repositories))
@@ -61,27 +61,32 @@ func (uow *pgUnitOfWork) CollectNewEvents(ctx context.Context, eventCh chan<- an
 		WithInt("repository_count", len(repos)).
 		Log()
 
+	allEntities := make([]adapter.Entity, 0, 10)
+	for _, repo := range repos {
+		entities := repo.Seen() 
+		allEntities = append(allEntities, entities...)
+	}
+
 	var wg sync.WaitGroup
 	var eventCount int64
-	for _, repo := range repos {
+	for _, entity := range allEntities {
 		wg.Add(1)
-		go func(r adapter.SeenedRepository) {
+		go func(e adapter.Entity) {
 			defer wg.Done()
-			for _, entity := range r.Seen() {
-				for _, event := range entity.Event() {
-					select {
-					case eventCh <- event:
-						atomic.AddInt64(&eventCount, 1)
-						logging.Debug("Domain event collected and sent").Log()
-					case <-ctx.Done():
-						logging.Warn("Context cancelled while collecting events").
-							WithError(ctx.Err()).
-							Log()
-						return
-					}
+			events := e.Event()
+			for _, event := range events {
+				select {
+				case eventCh <- event:
+					atomic.AddInt64(&eventCount, 1)
+					logging.Debug("Domain event collected and sent").Log()
+				case <-ctx.Done():
+					logging.Warn("Context cancelled while collecting events").
+						WithError(ctx.Err()).
+						Log()
+					return
 				}
 			}
-		}(repo)
+		}(entity)
 	}
 
 	wg.Wait()
@@ -93,33 +98,55 @@ func (uow *pgUnitOfWork) CollectNewEvents(ctx context.Context, eventCh chan<- an
 	uow.clearRepositories()
 }
 
-// clearRepositories clears all cached repositories after event collection
+// clearRepositories clears all cached repositories after event collection.
 func (uow *pgUnitOfWork) clearRepositories() {
 	uow.mu.Lock()
 	defer uow.mu.Unlock()
 	uow.repositories = make(map[string]adapter.SeenedRepository)
 }
 
-func (uow *pgUnitOfWork) User(ctx context.Context) repository.UserRepository {
-	session := uow.UnitOfWork.GetSession(ctx)
-	userRepo := repository.NewUserRepository(session)
+// getOrCreateRepository returns a cached repository or creates a new one using double-check locking.
+func (uow *pgUnitOfWork) getOrCreateRepository(
+	ctx context.Context,
+	key string,
+	factory func(*gorm.DB) adapter.SeenedRepository,
+) adapter.SeenedRepository {
+	// Fast path: check with read lock
+	uow.mu.RLock()
+	if repo, ok := uow.repositories[key]; ok {
+		uow.mu.RUnlock()
+		return repo
+	}
+	uow.mu.RUnlock()
+
+	// Slow path: acquire write lock and create repository
 	uow.mu.Lock()
 	defer uow.mu.Unlock()
+	// Create new repository instance
+	session := uow.UnitOfWork.GetSession(ctx)
+	repo := factory(session)
+	uow.repositories[key] = repo
 
-	key := "user"
-	uow.repositories[key] = userRepo
-
-	return userRepo
+	return repo
 }
 
+// User returns the UserRepository instance for the current transaction.
+func (uow *pgUnitOfWork) User(ctx context.Context) repository.UserRepository {
+	return uow.getOrCreateRepository(ctx, "user", func(session *gorm.DB) adapter.SeenedRepository {
+		return repository.NewUserRepository(session)
+	}).(repository.UserRepository)
+}
+
+// Token returns the TokenRepository instance for the current transaction.
 func (uow *pgUnitOfWork) Token(ctx context.Context) repository.TokenRepository {
-	session := uow.UnitOfWork.GetSession(ctx)
-	tokenRepo := repository.NewTokenRepository(session)
-	uow.mu.Lock()
-	defer uow.mu.Unlock()
+	return uow.getOrCreateRepository(ctx, "token", func(session *gorm.DB) adapter.SeenedRepository {
+		return repository.NewTokenRepository(session)
+	}).(repository.TokenRepository)
+}
 
-	key := "token"
-	uow.repositories[key] = tokenRepo
-
-	return tokenRepo
+// Profile returns the ProfileRepository instance for the current transaction.
+func (uow *pgUnitOfWork) Profile(ctx context.Context) repository.ProfileRepository {
+	return uow.getOrCreateRepository(ctx, "profile", func(session *gorm.DB) adapter.SeenedRepository {
+		return repository.NewProfileRepository(session)
+	}).(repository.ProfileRepository)
 }

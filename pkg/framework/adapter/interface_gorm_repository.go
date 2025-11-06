@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type gormRepository[E Entity] struct {
-	seen []Entity
-	db   *gorm.DB
+	seen   []Entity
+	seenMu sync.Mutex
+	db     *gorm.DB
 }
 
 func NewGormRepository[E Entity](db *gorm.DB) BaseRepository[E] {
@@ -20,19 +22,19 @@ func NewGormRepository[E Entity](db *gorm.DB) BaseRepository[E] {
 
 func (c *gormRepository[E]) FindByID(ctx context.Context, id uint64) (E, error) {
 	model, err := c.FindByField(ctx, "id", id)
-	c.seen = append(c.seen, model)
+	c.SetSeen(model)
 	return model, err
 }
 
 func (c *gormRepository[E]) FindByField(ctx context.Context, field string, value interface{}) (E, error) {
 	var e E
 	err := c.Model(ctx).Where(field+"=?", value).First(&e).Error
-	c.seen = append(c.seen, e)
+	c.SetSeen(e)
 	return e, err
 }
 
 func (c *gormRepository[E]) Remove(ctx context.Context, model E, softDelete bool) error {
-	c.seen = append(c.seen, model)
+	c.SetSeen(model)
 	if softDelete {
 		now := time.Now()
 		return c.Model(ctx).Update("deleted_at", &now).Error
@@ -43,7 +45,7 @@ func (c *gormRepository[E]) Remove(ctx context.Context, model E, softDelete bool
 
 func (c *gormRepository[E]) Save(ctx context.Context, model E) error {
 	err := c.db.WithContext(ctx).Save(model).Error
-	c.seen = append(c.seen, model)
+	c.SetSeen(model)
 	return err
 }
 
@@ -53,7 +55,7 @@ func (c *gormRepository[E]) Modify(ctx context.Context, model E) error {
 		return fmt.Errorf("gormRepository.Modify fail convert data to map: %w", err)
 	}
 	err = c.db.WithContext(ctx).Updates(m).Error
-	c.seen = append(c.seen, model)
+	c.SetSeen(model)
 	return err
 }
 
@@ -63,12 +65,18 @@ func (c *gormRepository[E]) Model(ctx context.Context) *gorm.DB {
 }
 
 func (c *gormRepository[E]) Seen() []Entity {
-	seen := c.seen
+	c.seenMu.Lock()
+	defer c.seenMu.Unlock()
+	
+	seen := make([]Entity, len(c.seen))
+	copy(seen, c.seen)
 	c.seen = []Entity{}
 	return seen
 }
 
 func (c *gormRepository[E]) SetSeen(model Entity) {
+	c.seenMu.Lock()
+	defer c.seenMu.Unlock()
 	c.seen = append(c.seen, model)
 }
 

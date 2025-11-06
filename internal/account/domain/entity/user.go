@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"shikposh-backend/internal/account/domain/events"
 	"shikposh-backend/pkg/framework/adapter"
 )
 
@@ -22,7 +23,7 @@ func NewUser(
 	email string,
 	password string,
 ) *User {
-	return &User{
+	user := &User{
 		AvatarIdentifier: avatarIdentifier,
 		UserName:         userName,
 		FirstName:        firstName,
@@ -30,4 +31,14 @@ func NewUser(
 		Email:            email,
 		Password:         password,
 	}
+	user.AddEvent(&events.RegisterUserEvent{
+		UserID:           user.ID,
+		AvatarIdentifier: user.AvatarIdentifier,
+		UserName:         user.UserName,
+		FirstName:        user.FirstName,
+		LastName:         user.LastName,
+		Email:            user.Email,
+	})
+	
+	return user
 }

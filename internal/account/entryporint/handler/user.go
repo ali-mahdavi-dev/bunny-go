@@ -5,7 +5,6 @@ import (
 
 	"shikposh-backend/internal/account/adapter"
 	"shikposh-backend/internal/account/domain/commands"
-	"shikposh-backend/internal/account/service_layer/command_handler"
 	httpapi "shikposh-backend/pkg/framework/api/http"
 	"shikposh-backend/pkg/framework/errors"
 	"shikposh-backend/pkg/framework/errors/phrases"
@@ -18,14 +17,12 @@ import (
 type UserController struct {
 	bus messagebus.MessageBus
 	ag  *adapter.AvatarGenerator
-	uh  *command_handler.UserHandler
 }
 
-func NewUserController(bus messagebus.MessageBus, ag *adapter.AvatarGenerator, uh *command_handler.UserHandler) *UserController {
+func NewUserController(bus messagebus.MessageBus, ag *adapter.AvatarGenerator) *UserController {
 	return &UserController{
 		bus: bus,
 		ag:  ag,
-		uh:  uh,
 	}
 }
 
@@ -114,14 +111,12 @@ func (u *UserController) Login(c fiber.Ctx) error {
 		return httpapi.ResError(c, err)
 	}
 
-	token, err := u.uh.LoginUseCase(ctx, cmd)
+	result, err := u.bus.Handle(ctx, cmd)
 	if err != nil {
 		return httpapi.ResError(c, err)
 	}
 
-	return httpapi.ResSuccess(c, fiber.Map{
-		"access": token,
-	})
+	return httpapi.ResSuccess(c, result)
 }
 
 // Logout godoc
